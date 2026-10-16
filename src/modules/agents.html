@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><title>ИИ-офис Immunolab</title>
+<style>
+/* Layout: office header (clock, workday state); floor of desks + task board on the left, the selected agent's work panel on the right (stacked on phones) */
+:root{--bg:#eef3f6;--floor:#e2eaef;--card:#ffffff;--fg:#132a3d;--mut:#5a6f80;--line:#d6e0e7;--acc:#0d7f74;--on-acc:#ffffff;--acc-soft:#d9efec;--ok:#2c8a4b;--warn:#b86b12;--bad:#c2410c;
+ --a1:#0d7f74;--a2:#2f6fd0;--a3:#8a5cc8;--a4:#c06a1c;--a5:#1f7a99;--a6:#c2417a;--a7:#5c7d1e;--a8:#7a5a3a;--a9:#b8860b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1820;--floor:#112029;--card:#14232e;--fg:#e3ecf2;--mut:#93a8b7;--line:#24394a;--acc:#3cc2b2;--on-acc:#06201d;--acc-soft:#163b39;--ok:#5cc47c;--warn:#e5a25a;--bad:#f08a5d;
+ --a1:#3cc2b2;--a2:#6ea4f0;--a3:#b893ea;--a4:#e69a55;--a5:#5cc0e0;--a6:#ef7fb0;--a7:#a6cc5a;--a8:#c9a27a;--a9:#e8c15a}}
+:root[data-theme="dark"]{--bg:#0d1820;--floor:#112029;--card:#14232e;--fg:#e3ecf2;--mut:#93a8b7;--line:#24394a;--acc:#3cc2b2;--on-acc:#06201d;--acc-soft:#163b39;--ok:#5cc47c;--warn:#e5a25a;--bad:#f08a5d;
+ --a1:#3cc2b2;--a2:#6ea4f0;--a3:#b893ea;--a4:#e69a55;--a5:#5cc0e0;--a6:#ef7fb0;--a7:#a6cc5a;--a8:#c9a27a;--a9:#e8c15a}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px;line-height:1.5}
+*{box-sizing:border-box}
+.wrap{max-width:1180px;margin:0 auto;padding-block:18px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+h1{font-family:"Unbounded","Golos Text",system-ui,sans-serif;font-size:clamp(20px,4.5vw,26px);margin:0;line-height:1.2;text-wrap:balance}
+h2{font-size:16px;margin:0}
+.sub{color:var(--mut);font-size:14px;margin:4px 0 0;max-width:72ch}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}
+.clock{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+.clock b{font-variant-numeric:tabular-nums;font-size:20px;font-family:"Unbounded","Golos Text",sans-serif}
+.clock span{font-size:12px;color:var(--mut);display:block}
+.day{font-size:12px;font-weight:600;border-radius:999px;padding:2px 9px;background:var(--acc-soft);color:var(--fg)}
+.layout{display:grid;gap:16px;grid-template-columns:1fr}
+@media (min-width:960px){.layout{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:start}.side{position:sticky;top:12px}}
+.left{display:grid;gap:16px;min-width:0}
+/* office floor */
+.floor{background:var(--floor);border:1px solid var(--line);border-radius:14px;padding:12px;display:grid;gap:10px;grid-template-columns:repeat(2,minmax(0,1fr));
+ background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:28px 28px;background-position:-1px -1px}
+@media (min-width:640px){.floor{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.sign{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:13px}
+.sign b{font-size:14px}
+.desk{all:unset;box-sizing:border-box;cursor:pointer;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;display:grid;gap:6px;min-width:0;position:relative}
+.desk.chief{grid-column:1/-1}.desk.chief .scene{background:color-mix(in srgb,var(--c) 16%,var(--card))}
+.msg .from{display:block;font-size:12px;font-weight:700;color:var(--mut);margin-bottom:2px}
+.desk:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.desk[aria-pressed="true"]{border-color:var(--c);box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 35%,transparent)}
+.scene{height:74px;position:relative;border-radius:8px;background:color-mix(in srgb,var(--c) 10%,var(--card));overflow:hidden}
+.monitor{position:absolute;left:50%;top:8px;width:52px;height:34px;margin-left:-20px;border-radius:5px;background:#1d2b36;border:3px solid #33444f}
+.monitor i{position:absolute;left:5px;height:3px;border-radius:2px;background:var(--c);opacity:.85}
+.monitor i:nth-child(1){top:6px;width:60%}.monitor i:nth-child(2){top:12px;width:80%}.monitor i:nth-child(3){top:18px;width:45%}
+.stand{position:absolute;left:50%;top:45px;width:9px;height:7px;margin-left:2px;background:#33444f}
+.table{position:absolute;left:6px;right:6px;bottom:8px;height:7px;border-radius:4px;background:color-mix(in srgb,var(--c) 45%,#8a7a66)}
+.bot{position:absolute;left:10px;bottom:15px;width:28px;height:28px;border-radius:50%;background:var(--c);color:var(--on-acc);display:grid;place-items:center;font-weight:700;font-size:13px;transition:transform .4s}
+.bot::after{content:"";position:absolute;bottom:-6px;left:4px;width:20px;height:8px;border-radius:6px 6px 0 0;background:var(--c);opacity:.6}
+.cup{position:absolute;right:12px;bottom:15px;width:9px;height:10px;border-radius:0 0 3px 3px;background:#c9b9a3}
+.desk.busy .monitor i{animation:type 1s steps(4) infinite}
+.desk.busy .monitor i:nth-child(2){animation-delay:.25s}.desk.busy .monitor i:nth-child(3){animation-delay:.5s}
+@keyframes type{0%{width:15%}100%{width:85%}}
+.desk.busy .bot{animation:bob .6s ease-in-out infinite alternate}
+@keyframes bob{to{transform:translateY(-3px)}}
+.desk.away .bot{transform:translateX(120px);opacity:.15}
+.desk.away .monitor{background:#2a333a}.desk.away .monitor i{opacity:.15}
+@media (prefers-reduced-motion:reduce){.desk.busy .monitor i,.desk.busy .bot{animation:none}.bot{transition:none}}
+.plate{display:grid;gap:1px;min-width:0}
+.plate b{font-size:14px}
+.plate span{font-size:12px;color:var(--mut);overflow:hidden;text-overflow:ellipsis}
+.status{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600}
+.status::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--st,var(--ok));flex:none}
+.badge{position:absolute;z-index:2;top:4px;right:4px;font-size:11px;font-weight:700;background:var(--c);color:var(--on-acc);border-radius:999px;padding:1px 7px}
+/* board */
+.board{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:10px}
+.bhead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.summary{font-size:14px;background:var(--acc-soft);border-radius:10px;padding:10px 12px;white-space:pre-wrap}
+.tasks{display:grid;gap:6px}
+.task{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.task .dot{width:24px;height:24px;border-radius:50%;background:var(--c);color:var(--on-acc);display:grid;place-items:center;font-size:11px;font-weight:700;flex:none}
+.task .tx{flex:1;min-width:0;font-size:14px}
+.task .tx small{display:block;font-size:12px;color:var(--mut)}
+.task.done .tx{color:var(--mut);text-decoration:line-through}
+.task input{width:18px;height:18px;margin-top:3px;accent-color:var(--acc);flex:none}
+/* work panel */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:10px;min-width:0}
+.phead{display:flex;gap:10px;align-items:center}
+.phead .bot{position:static;flex:none;width:40px;height:40px;font-size:17px}
+.phead .bot::after{display:none}
+.phead div{min-width:0}
+.know{font-size:13px;color:var(--mut);border-left:3px solid var(--c);padding-left:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:5px 11px;cursor:pointer;text-align:left}
+.chip:hover{border-color:var(--c)}
+.log{display:grid;gap:8px;max-height:460px;overflow:auto;padding:2px}
+.msg{padding:9px 12px;border-radius:12px;background:var(--bg);border:1px solid var(--line);white-space:pre-wrap;word-break:break-word;font-size:14px;max-width:94%}
+.msg.me{justify-self:end;background:var(--c);color:var(--on-acc);border-color:var(--c)}
+.msg.sys{justify-self:center;font-size:12px;color:var(--mut);background:none;border:0;padding:2px}
+.mact{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.mini{font:inherit;font-size:12px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:8px;padding:3px 8px;cursor:pointer}
+.inrow{display:flex;gap:8px}
+.inrow textarea{flex:1;min-width:0;font:inherit;font-size:14px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px;resize:vertical;min-height:44px}
+.btn{font:inherit;font-weight:600;font-size:14px;border:0;border-radius:10px;padding:9px 14px;background:var(--c,var(--acc));color:var(--on-acc);cursor:pointer;white-space:nowrap}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.sec{background:none;border:1px solid var(--line);color:var(--fg);font-weight:500}
+.filebox{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--mut)}
+.warn{font-size:13px;color:var(--warn)}
+.hint{font-size:12px;color:var(--mut)}
+</style></head><body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<div class="wrap">
+ <div class="top">
+  <div><h1>ИИ-офис Immunolab</h1>
+  <p class="sub">ИИ-сотрудники работают по графику центра: утром проводят планёрку, ставят задачи на день, а днём отвечают на ваши поручения. Каждый знает свою часть: прайс, документы, сотрудников, обучение, деньги, рекламу и вакансии.</p></div>
+  <div class="clock"><div><b id="clk">--:--</b><span>Ташкент</span></div><span class="day" id="dayTxt">…</span></div>
+ </div>
+ <div class="layout">
+  <div class="left">
+   <div class="floor" id="floor"><div class="sign"><b>Кабинет ИИ · виртуальный 2 этаж</b><span id="sigTxt"></span></div></div>
+   <section class="board" aria-labelledby="bT">
+    <div class="bhead"><h2 id="bT">Доска задач на сегодня</h2><button class="btn sec" id="planBtn" type="button" hidden>Провести планёрку</button></div>
+    <div id="plan"></div>
+    <div class="tasks" id="tasks"></div>
+   </section>
+  </div>
+  <section class="panel side" id="panel" aria-live="polite"></section>
+ </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const mk=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
+const GUIDES=__GUIDES__;
+const DOCS=__DOCS__;
+const ROOMS='1 свободная; 2 ресепшн 2 (Immunitet); 3 кухня; 4 невролог; 5 педиатр; 6 и 7 вакцинация и процедуры (медсестра Комила); 8 и 14 санузлы; 9 зал ожидания; 10 и 17 коридоры; 11 лестница на 2 этаж и процедурная; 12 комната Бакиевых (вакцина, касса); 13 массажная; 15 свободная; 16 регистратура и касса (Гулчирой); 18 забор крови; 19 гематология (врач-лаборант Авазбек); 20 исследование крови; 21 ИФА; 22 мойка; 23 сбор мочи; 24 анализ мочи.';
+const RULES='График 8:00–17:00, обед 12:00–13:00, воскресенье выходной. Электронная очередь на вакцинацию 08:00–14:00. Каждый клиент сначала регистрируется у Гулчирой (комната 16), при потоке выдаются талоны. Анализ: регистрация → оплата → ожидание → забор крови в комнате 18. Прививка: регистрация → приём и оплата у Комилы (комнаты 6–7) → прививка → наблюдение 30 минут. Оплата: Humo, Uzcard, QR. 12 филиалов по вакцинации в районах Наманганской области (контроль: Исматов Рустам). Вакансии: call-центр, младший медработник.';
+const CENTER='Immunolab — частный медицинский центр в Намангане, Узбекистан: лаборатория, клиника (невролог, педиатр, процедуры, массаж) и вакцинация.';
+const LEADERS=['lead','manager'];
+const AG=[
+ {id:'chief',name:'Главный агент',role:'Принимает ваши вопросы и распределяет их',c:'--a9',ini:'Г',who:['all'],chief:true,
+  know:'Пишите ему любой вопрос. Он решает, какие агенты справятся, передаёт им задачу, собирает ответы и говорит, кто из людей что делает.',
+  chips:['Как нам увеличить поток клиентов на вакцинацию?','Что нужно сделать, чтобы пройти проверку санэпидстанции?','Клиент жалуется на долгую очередь. Как решить?','Нам нужен новый сотрудник в call-центр. С чего начать?'],
+  sys:()=>'Ты Главный агент ИИ-офиса. '+CENTER},
+ {id:'office',name:'Офис-менеджер',role:'Планёрка и задачи',c:'--a5',ini:'О',who:LEADERS,
+  know:'Каждое утро собирает сведения: проблемы сотрудников, документы, обучение, прайс. Ставит задачи людям и другим агентам, следит, чтобы всё делалось.',
+  chips:['Что сегодня важнее всего?','Разбери проблемы сотрудников и предложи решения','Кому нужна помощь в обучении?','Составь план улучшений центра на месяц'],
+  sys:()=>'Ты Офис-менеджер ИИ-офиса. '+CENTER+' Отвечай по-русски, коротко, списком: что сделать, кто отвечает, срок. Опирайся только на данные ниже.\n'+ctxAll()},
+ {id:'malohat',name:'Малохат',role:'Консультант для клиентов',c:'--a1',ini:'М',who:['all'],
+  know:'Знает прайс вакцин и анализов, комнаты, график и порядок приёма. Отвечает на русском, узбекском и английском.',
+  chips:['Сколько стоит Превенар-13 и где его сделать?','Как подготовиться к общему анализу крови?','Ответ клиенту на узбекском: какие вакцины есть для ребёнка 1 года?','Какие у нас самые дорогие вакцины?'],
+  sys:()=>'Ты Малохат, вежливый ИИ-консультант. '+CENTER+' Отвечай на языке вопроса (русский, узбекский или английский), коротко и тепло. Используй только факты ниже. Если цены или анализа нет в прайсе, скажи, что уточнит регистратура (комната 16). Не ставь диагнозы и не назначай лечение, советуй обратиться к врачу.\nПРАЙС:\n'+priceText()+'\nКОМНАТЫ: '+ROOMS+'\nПРАВИЛА: '+RULES},
+ {id:'doc',name:'Документовед',role:'Документы и журналы',c:'--a2',ini:'Д',who:['lead','manager','reg','vac','lab'],
+  know:'Знает 80 документов в 10 папках, кто за что отвечает и что отмечено «Есть / Нет». Пишет черновики приказов, инструкций и договоров.',
+  chips:['Каких обязательных документов у нас нет?','Черновик приказа об ответственном за журнал температуры','Какие журналы ведёт медсестра по вакцине?','План по документам на месяц'],
+  sys:()=>'Ты Документовед. '+CENTER+' Отвечай по-русски, структурно. Черновики помечай словом «ЧЕРНОВИК» и напоминай, что требования законодательства Узбекистана нужно проверить у юриста.\nЧЕК-ЛИСТ:\n'+docsText()},
+ {id:'trainer',name:'Тренер',role:'Обучение сотрудников',c:'--a3',ini:'Т',who:['all'],
+  know:'Знает учебные пособия всех сотрудников и вакансий. Объясняет обязанности простыми словами и проверяет знания.',
+  chips:['Проверь меня: задай 3 вопроса по моей должности','Что делать в первый день?','Клиент пришёл без регистрации. Что делать?','Тест из 5 вопросов для нового регистратора'],
+  sys:()=>'Ты Тренер, наставник сотрудников. '+CENTER+' Отвечай на языке сотрудника (русский или узбекский), просто, по шагам. При проверке знаний задавай по одному вопросу и оценивай ответ.\nТЕКУЩИЙ СОТРУДНИК: '+meText()+'\nПОСОБИЯ:\n'+guidesText()+'\nПРАВИЛА: '+RULES},
+ {id:'marketer',name:'Маркетолог',role:'Реклама и красивое оформление',c:'--a6',ini:'Р',who:['lead','manager','reg'],
+  know:'Пишет посты для Instagram и Telegram на узбекском и русском, придумывает акции, тексты для вывесок, оформление зала ожидания и кабинетов.',
+  chips:['Пост в Instagram про Превенар-13 на узбекском и русском','Придумай акцию на неделю для вакцинации детей','Как красиво оформить зал ожидания и регистратуру?','План постов на неделю для Telegram-канала'],
+  sys:()=>'Ты Маркетолог. '+CENTER+' Пиши живо и честно, без обещаний вылечить и без запугивания: медицинская реклама в Узбекистане должна быть достоверной. Тексты давай на узбекском (латиница) и русском, с хэштегами по Намангану. Цены бери только из прайса.\nПРАЙС:\n'+priceText()+'\nПРАВИЛА: '+RULES},
+ {id:'finance',name:'Финансист',role:'Деньги и прибыль',c:'--a7',ini:'Ф',who:LEADERS,
+  know:'Считает маржу и окупаемость, предлагает, как поднять выручку и снизить расходы. Работает с вашими цифрами или с файлом от Аналитика.',
+  chips:['Как увеличить выручку вакцинации на 20%?','Посчитай маржу: вакцина стоит нам X, продаём за Y','Какие расходы обычно можно сократить в лаборатории?','Сдача кабинетов врачам в аренду: как посчитать цену?'],
+  sys:()=>'Ты Финансист. '+CENTER+' Отвечай по-русски, с расчётами в сумах. Не выдумывай себестоимость и расходы: если цифр нет, попроси их и покажи формулу. Ты не финансовый консультант, решения принимает руководитель.\nПРАЙС:\n'+priceText()+(FILE?'\nТАБЛИЦА ('+FILE.name+'):\n'+FILE.text:'')+'\nЦЕНТР: 18 сотрудников, 2 вакансии, 24 помещения на 1 этаже, комнаты 1 и 15 свободны (можно сдавать врачам).'},
+ {id:'analyst',name:'Аналитик',role:'Отчёты и цифры',c:'--a4',ini:'А',file:true,who:LEADERS,
+  know:'Читает выгрузку из Sirocco или любую таблицу Excel/CSV и делает отчёт: выручка, анализы, загрузка, что требует внимания.',
+  chips:['Сделай отчёт за день по файлу','Какие анализы самые частые?','Что требует внимания директора?','Сравни лабораторию и вакцинацию по выручке'],
+  sys:()=>'Ты Аналитик. '+CENTER+' Отвечай по-русски. Работай только с данными из таблицы. Считай аккуратно, показывай итоги и выводы списком. В конце: «Проверьте цифры по Sirocco».'+(FILE?'\nТАБЛИЦА ('+FILE.name+'):\n'+FILE.text:'\nТАБЛИЦА: не загружена. Попроси загрузить файл Excel или CSV.')},
+ {id:'hr',name:'HR-менеджер',role:'Вакансии и команда',c:'--a8',ini:'HR',who:LEADERS,
+  know:'Пишет объявления о вакансиях, вопросы для собеседования, план адаптации нового сотрудника и следит за настроением команды по форме проблем.',
+  chips:['Объявление о вакансии call-центра на узбекском и русском','10 вопросов для собеседования младшего медработника','План адаптации нового сотрудника на 2 недели','Что сделать, чтобы сотрудники были довольны?'],
+  sys:()=>'Ты HR-менеджер. '+CENTER+' Отвечай по-русски (объявления на узбекском и русском). Не обещай зарплату, если её не назвал руководитель.\nВАКАНСИИ И ПОСОБИЯ:\n'+GUIDES.filter(g=>g.vacancy).map(g=>g.full+': '+g.duties.join('; ')).join('\n')+'\nКОМАНДА: '+GUIDES.filter(g=>!g.vacancy).map(g=>g.full+' — '+g.role).join('; ')+'\nПРОБЛЕМЫ СОТРУДНИКОВ (если видны):\n'+problemsText()}
+];
+let DB=null,SAMPLE=null,CAN=false,CANREAL=false,AUTO=false,CAT=[],DSTAT={},FILE=null,CUR=null,PROBS=[],TRAIN=[],PLAN=null,TASKS=[],TV=null;const HIST={};const BUSY={};
+const AGBY=id=>AG.find(a=>a.id===id)||AG[0];
+// ---------- time (Tashkent)
+function now(){const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Tashkent',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',weekday:'short',hour12:false}).formatToParts(new Date());const g=t=>(p.find(x=>x.type==t)||{}).value;
+ return{date:g('year')+'-'+g('month')+'-'+g('day'),h:+g('hour')%24,m:+g('minute'),wd:g('weekday'),t:g('hour')+':'+g('minute')}}
+function dayState(){const n=now(),mins=n.h*60+n.m;if(n.wd==='Sun')return['Выходной','away'];if(mins<480||mins>=1020)return['Нерабочее время','away'];if(mins>=720&&mins<780)return['Обед','lunch'];return['Рабочий день','work']}
+function tick(){const n=now();$('clk').textContent=n.t;$('dayTxt').textContent=dayState()[0]}
+// ---------- context builders
+function priceText(){if(!CAT.length)return '(прайс пока пуст)';return CAT.map(t=>'- '+t.name+(t.cat?' ['+t.cat+']':'')+(t.price?': '+Number(t.price).toLocaleString('ru-RU')+' сум':'')+(t.prep?' ('+t.prep+')':'')+(t.time?', срок '+t.time:'')).join('\n')}
+function docsText(){const SO={'':'не отмечено',have:'есть',no:'нет',chk:'проверить'};return DOCS.map(f=>f[0]+':\n'+f[1].map(i=>'  - '+i[1]+' | отвечает: '+i[2]+' | '+(i[4]==='o'?'обязательно':i[4]==='w'?'желательно':'проверить требование')+' | статус: '+SO[DSTAT[i[0]]||'']).join('\n')).join('\n')}
+function docsShort(){let all=0,have=0,no=[];DOCS.forEach(f=>f[1].forEach(i=>{all++;const s=DSTAT[i[0]]||'';if(s==='have')have++;if(i[4]==='o'&&s!=='have')no.push(i[1]+' ('+i[2]+')')}));return 'Документов: '+all+', отмечено «есть»: '+have+'. Обязательные без отметки «есть» ('+no.length+'): '+no.slice(0,25).join('; ')}
+function problemsText(){const open=PROBS.filter(p=>!p.done);if(!open.length)return '(нет открытых сообщений или нет доступа)';const C=['Оборудование и реактивы','Помещение и уборка','Компьютер и программа','График и нагрузка','Клиенты и очередь','Оплата и условия работы','Отношения в коллективе','Безопасность','Другое'],U=['можно подождать','важно','срочно'];
+ return open.slice(0,30).map(p=>'- '+p.name+' ('+p.role+'): ['+(C[p.cat]||'')+', '+(U[p.urgency]||'')+'] '+p.text+(p.fix?' | предлагает: '+p.fix:'')).join('\n')}
+function trainText(){if(!TRAIN.length)return '(пока никто не начал обучение или нет доступа)';return TRAIN.map(t=>'- '+t.name+': '+(t.count||0)+' из '+(t.total||0)).join('\n')}
+function meText(){const I=window.__IMM||{};const g=GUIDES.find(x=>x.key===I.me);return g?(g.full+', '+g.role+', '+g.room):(I.owner?'руководитель (владелец)':'не указан')}
+function guidesText(){const I=window.__IMM||{};const list=(I.owner&&!I.preview)?GUIDES:GUIDES.filter(g=>g.key===I.me||g.vacancy);
+ return list.map(g=>g.full+' — '+g.role+' ('+g.room+'), подчиняется: '+g.boss+'\n Обязанности: '+g.duties.join('; ')+'\n План: '+g.days.map((d,i)=>'День '+(i+1)+' '+d.t+': '+d.tasks.join('; ')).join(' | ')+'\n Безопасность: '+g.safety.join('; ')).join('\n\n')}
+function ctxAll(){return 'ДАТА: '+now().date+' ('+dayState()[0]+')\nПРАВИЛА: '+RULES+'\nДОКУМЕНТЫ: '+docsShort()+'\nПРОБЛЕМЫ СОТРУДНИКОВ:\n'+problemsText()+'\nОБУЧЕНИЕ:\n'+trainText()+'\nПРАЙС: '+CAT.length+' позиций'+(CAT.some(c=>c.cat!=='Вакцинация')?'':' (только вакцины, анализов лаборатории ещё нет)')+'\nКОМАНДА: '+GUIDES.map(g=>g.full+' — '+g.role).join('; ')+'\nЗАДАЧИ НА ДОСКЕ: '+(TASKS.filter(t=>t.status!=='done').map(t=>t.text+' ('+t.to+')').join('; ')||'нет')}
+function myGroup(){const I=window.__IMM||{};if(I.owner&&!I.preview)return 'owner';const g=GUIDES.find(x=>x.key===I.me);return g?g.group:null}
+function visible(a){const g=myGroup();return g==='owner'||a.who.includes('all')||(g&&a.who.includes(g))}
+// ---------- floor
+function deskState(a){if(BUSY[a.id])return['работает…','var(--warn)','busy'];const d=dayState();if(d[1]==='away')return['не в офисе','var(--mut)','away'];if(d[1]==='lunch')return['на обеде','var(--mut)','away'];
+ if(!SAMPLE)return['нет связи','var(--mut)',''];if(a.id==='malohat'&&!CAT.length)return['ждёт прайс','var(--warn)',''];if(a.id==='analyst'&&!FILE)return['ждёт файл','var(--warn)',''];return['на месте','var(--ok)','']}
+function drawFloor(){const fl=$('floor');[...fl.querySelectorAll('.desk')].forEach(d=>d.remove());let n=0;
+ AG.forEach(a=>{if(!visible(a))return;n++;const st=deskState(a);const d=mk('button','desk '+st[2]+(a.chief?' chief':''));d.type='button';d.style.setProperty('--c','var('+a.c+')');d.setAttribute('aria-pressed',String(CUR===a.id));d.dataset.id=a.id;
+  const sc=mk('div','scene');const mo=mk('div','monitor');mo.append(mk('i'),mk('i'),mk('i'));sc.append(mo,mk('div','stand'),mk('div','table'),mk('div','cup'),mk('div','bot',a.ini));
+  const pl=mk('div','plate');pl.append(mk('b',null,a.name),mk('span',null,a.role));const s=mk('span','status',st[0]);s.style.setProperty('--st',st[1]);pl.append(s);
+  const k=TASKS.filter(t=>t.agent===a.id&&t.status!=='done').length;d.append(sc,pl);if(k){const bd=mk('span','badge',String(k));bd.title='Задач на сегодня: '+k;d.append(bd)}d.onclick=()=>open(a.id);fl.append(d)});
+ $('sigTxt').textContent=n+' '+(n===1?'агент':n<5?'агента':'агентов')+(SAMPLE?'':' · ждут подключения к ИИ');
+ if(!CUR||!AG.some(a=>a.id===CUR&&visible(a))){const f=AG.find(visible);if(f)open(f.id,true)}}
+// ---------- board
+function drawBoard(){const p=$('plan');p.textContent='';const today=now().date;
+ if(PLAN&&PLAN.date===today){p.append(mk('div','summary',PLAN.summary||''));p.append(mk('div','hint','Планёрка проведена '+(PLAN.at||'')+(PLAN.by?' · '+PLAN.by:'')))}
+ else p.append(mk('div','hint',CAN?'Сегодня планёрки ещё не было. Нажмите «Провести планёрку»: Офис-менеджер соберёт данные и раздаст задачи людям и агентам.':'Сегодня планёрки ещё не было. Её проводит руководитель.'));
+ $('planBtn').hidden=!(CAN&&SAMPLE&&DB);$('planBtn').disabled=!!BUSY.office;
+ const box=$('tasks');box.textContent='';const list=TASKS.filter(t=>t.status!=='done'||t.date===today);
+ if(!list.length){box.append(mk('div','hint','Задач пока нет.'));return}
+ list.forEach(t=>{const a=AGBY(t.agent);const row=mk('div','task'+(t.status==='done'?' done':''));row.style.setProperty('--c','var('+a.c+')');
+  const cb=document.createElement('input');cb.type='checkbox';cb.checked=t.status==='done';cb.disabled=!CAN;cb.setAttribute('aria-label','Выполнено');cb.onchange=()=>setTask(t.id,cb.checked?'done':'open');
+  const tx=mk('div','tx',t.text);tx.append(mk('small',null,'Агент: '+a.name+' · исполнитель: '+(t.to||'—')+(t.date?' · '+t.date:'')));
+  row.append(cb,mk('div','dot',a.ini),tx);box.append(row)})}
+async function saveTasks(next){if(!DB)return;try{await DB.doc('office/tasks').set({items:next.slice(-120),updated:Date.now()})}catch(e){}}
+function setTask(id,status){saveTasks(TASKS.map(t=>t.id===id?Object.assign({},t,{status}):t))}
+function addTask(agent,text,to){const t={id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),agent,text:text.slice(0,300),to:to||'Руководитель',status:'open',date:now().date};saveTasks(TASKS.concat([t]))}
+async function planDay(){if(!SAMPLE||!DB||BUSY.office)return;BUSY.office=true;drawFloor();drawBoard();
+ const ids=AG.map(a=>a.id+' ('+a.name+': '+a.role+')').join(', ');
+ const prompt='Ты Офис-менеджер ИИ-офиса. '+CENTER+' Проведи утреннюю планёрку на сегодня по данным ниже. Верни ТОЛЬКО JSON: {"summary":"3–5 коротких строк по-русски: главное на сегодня","tasks":[{"agent":"id агента","text":"конкретная задача на сегодня, 1 предложение","to":"кто выполняет: имя сотрудника, должность или «агент»"}]}. 8–12 задач. Задачи реальные и выполнимые за день, опираются только на данные. Распредели между агентами: '+ids+'. Включи: решение срочных проблем сотрудников, недостающие обязательные документы, обучение отстающих, одну задачу для роста выручки и одну для красивого оформления или рекламы.\n'+ctxAll();
+ try{const r=await SAMPLE.json(prompt,{modelTier:'default'});const tasks=(r&&Array.isArray(r.tasks)?r.tasks:[]).filter(t=>t&&t.text).slice(0,14);const d=now();
+  const keep=TASKS.filter(t=>t.status!=='done'&&t.date!==d.date);
+  const fresh=tasks.map((t,i)=>({id:d.date+'_'+i+Math.random().toString(36).slice(2,4),agent:AG.some(a=>a.id===t.agent)?t.agent:'office',text:String(t.text).slice(0,300),to:String(t.to||'').slice(0,80),status:'open',date:d.date}));
+  await DB.doc('office/plan').set({date:d.date,at:d.t,by:'Офис-менеджер',summary:String(r&&r.summary||'').slice(0,1200)});
+  await saveTasks(keep.concat(fresh))}catch(e){$('plan').prepend(mk('div','warn','Планёрка не получилась: '+(e&&e.code==='rate_limited'?'слишком много запросов, попробуйте через минуту.':'попробуйте ещё раз.')))}
+ BUSY.office=false;drawFloor();drawBoard()}
+$('planBtn').onclick=planDay;
+// ---------- work panel
+function open(id,quiet){CUR=id;const a=AGBY(id);const p=$('panel');p.textContent='';p.style.setProperty('--c','var('+a.c+')');
+ [...document.querySelectorAll('.desk')].forEach(d=>d.setAttribute('aria-pressed',String(d.dataset.id===id)));
+ const h=mk('div','phead');const b=mk('div','bot',a.ini);b.style.setProperty('--c','var('+a.c+')');const t=mk('div');t.append(mk('h2',null,a.name),mk('div','hint',a.role+' · '+deskState(a)[0]));h.append(b,t);p.append(h);
+ p.append(mk('div','know',a.know));
+ if(dayState()[1]!=='work')p.append(mk('div','hint','Сейчас '+dayState()[0].toLowerCase()+', но на поручение агент всё равно ответит.'));
+ const my=TASKS.filter(x=>x.agent===id&&x.status!=='done');if(my.length){const w=mk('div','hint','Задачи на сегодня: '+my.map(x=>x.text).join(' · '));p.append(w)}
+ if(a.id==='malohat')p.append(mk('div','hint','В прайсе '+CAT.length+' позиций. Анализы лаборатории добавьте в «Maktab → Анализы», и Малохат их сразу узнает.'));
+ if(a.file||a.id==='finance'){const fb=mk('div','filebox');const inp=document.createElement('input');inp.type='file';inp.accept='.xlsx,.xls,.csv,.txt';inp.hidden=true;
+  const fbtn=mk('button','btn sec',FILE?'Заменить файл':'Загрузить Excel / CSV');fbtn.type='button';fbtn.onclick=()=>inp.click();
+  inp.onchange=async()=>{const f=inp.files[0];if(!f)return;try{FILE=await readTable(f);open(id);drawFloor()}catch(e){fb.append(mk('span','warn','Не удалось прочитать файл: '+e.message))}};
+  fb.append(inp,fbtn,mk('span',null,FILE?(FILE.name+' · '+FILE.rows+' строк'+(FILE.cut?' (обрезано)':'')):'Выгрузка из Sirocco или любая таблица'));p.append(fb)}
+ const ch=mk('div','chips');a.chips.forEach(c=>{const x=mk('button','chip',c);x.type='button';x.onclick=()=>send(c);ch.append(x)});p.append(ch);
+ const log=mk('div','log');log.id='log';
+ (HIST[id]||[]).forEach(m=>{const e=mk('div','msg'+(m.role==='user'?' me':''));if(m.from){const f=mk('span','from',m.from);f.style.color='var('+(m.c||'--mut')+')';e.append(f)}e.append(mk('span','mt',m.content));if(m.role==='assistant'&&CAN&&DB){const ac=mk('div','mact');const tb=mk('button','mini','В задачи');tb.type='button';tb.onclick=()=>{addTask(m.agent||id,m.content.split('\n').find(s=>s.trim())||m.content);tb.textContent='Добавлено';tb.disabled=true};ac.append(tb);e.append(ac)}log.append(e)});
+ if(!(HIST[id]||[]).length)log.append(mk('div','msg sys',SAMPLE?'Напишите задачу или выберите пример выше.':'Агенты отвечают, когда подключён ИИ: в Claude или на сервере Immunolab с API-ключом.'));p.append(log);
+ const row=mk('div','inrow');const ta=document.createElement('textarea');ta.id='q';ta.rows=2;ta.placeholder='Поручение для: '+a.name;ta.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}};
+ const sb=mk('button','btn','Отправить');sb.type='button';sb.disabled=!SAMPLE||!!BUSY[id];sb.onclick=()=>send();row.append(ta,sb);p.append(row);
+ if((HIST[id]||[]).length){const cl=mk('button','btn sec','Новый разговор');cl.type='button';cl.onclick=()=>{HIST[id]=[];open(id)};p.append(cl)}
+ log.scrollTop=1e6;if(!quiet&&window.innerWidth<960)p.scrollIntoView({behavior:'smooth',block:'start'})}
+async function send(text){const id=CUR,a=AGBY(id);const q=(text||($('q')&&$('q').value)||'').trim();if(!q||!SAMPLE||BUSY[id])return;
+ if(a.chief)return runChief(q);
+ HIST[id]=HIST[id]||[];HIST[id].push({role:'user',content:q});BUSY[id]=true;open(id,true);drawFloor();
+ const log=$('log');const m=mk('div','msg','…');log.append(m);log.scrollTop=1e6;
+ const turns=HIST[id].map((x,i)=>i===0?{role:'user',content:a.sys()+'\n\nПОРУЧЕНИЕ:\n'+x.content}:{role:x.role,content:x.content});
+ try{const r=await SAMPLE(turns,{cache:false,onText:x=>{if(CUR===id){m.textContent=x.text;log.scrollTop=1e6}}});HIST[id].push({role:'assistant',content:r.text||''})}
+ catch(e){HIST[id].pop();const why=e&&e.code==='rate_limited'?'Слишком много запросов, подождите минуту.':e&&e.code==='not_granted'?'Нет разрешения на обращение к Claude. Разрешите доступ в настройках страницы.':'Не получилось получить ответ. Попробуйте ещё раз.';
+  BUSY[id]=false;if(CUR===id){open(id,true);$('log').append(mk('div','msg sys',why))}drawFloor();return}
+ BUSY[id]=false;if(CUR===id)open(id,true);drawFloor()}
+// ---------- главный агент: маршрутизация вопросов
+async function runChief(q){const id='chief';HIST[id]=HIST[id]||[];HIST[id].push({role:'user',content:q});BUSY[id]=true;open(id,true);drawFloor();
+ const team=AG.filter(a=>!a.chief&&visible(a));
+ const say=(from,c,content,agent)=>{HIST[id].push({role:'assistant',from,c,content,agent,inner:true});if(CUR===id)open(id,true)};
+ const prev=HIST[id].filter(m=>!m.inner).slice(-7,-1).map(m=>(m.role==='user'?'Вопрос: ':'Ответ: ')+m.content.slice(0,600)).join('\n');
+ try{
+  const route=await SAMPLE.json('Ты Главный агент ИИ-офиса. '+CENTER+' Пользователь: '+meText()+'. Реши, кто из агентов ответит на вопрос. Агенты: '+team.map(a=>a.id+' — '+a.name+': '+a.know).join(' | ')+'. Верни ТОЛЬКО JSON: {"plan":"одно предложение по-русски: как решаем","steps":[{"agent":"id","task":"конкретное поручение агенту"}],"people":[{"who":"имя сотрудника или должность","task":"что сделать человеку"}]}. В steps от 0 до 3 агентов, только из списка; если вопрос простой (приветствие, уточнение), steps пустой. В people только реальные люди из команды: '+GUIDES.filter(g=>!g.vacancy).map(g=>g.full.split(' ').slice(0,2).join(' ')+' ('+g.role+')').join('; ')+'.'+(prev?'\nПредыдущий разговор:\n'+prev:'')+'\nВОПРОС: '+q,{modelTier:'default'});
+  const steps=(route&&Array.isArray(route.steps)?route.steps:[]).filter(s=>s&&team.some(a=>a.id===s.agent)&&s.task).slice(0,3);
+  const people=(route&&Array.isArray(route.people)?route.people:[]).filter(p=>p&&p.who&&p.task).slice(0,6);
+  say('Главный агент','--a9',(route&&route.plan?route.plan:'Разбираю вопрос.')+(steps.length?'\nПередаю: '+steps.map(s=>AGBY(s.agent).name).join(', '):''));
+  const results=[];
+  for(const s of steps){const ag=AGBY(s.agent);BUSY[ag.id]=true;drawFloor();
+   try{const r=await SAMPLE([{role:'user',content:ag.sys()+'\n\nПОРУЧЕНИЕ ОТ ГЛАВНОГО АГЕНТА (вопрос пользователя: «'+q+'»):\n'+s.task+'\nОтветь по делу, до 12 строк.'}],{cache:false});
+    results.push({ag,task:s.task,text:r.text||''});say(ag.name+' ответил(а)',ag.c,r.text||'',ag.id);
+    HIST[ag.id]=HIST[ag.id]||[];HIST[ag.id].push({role:'user',content:'От Главного агента: '+s.task},{role:'assistant',content:r.text||''})}
+   catch(e){say(ag.name,ag.c,'Не смог(ла) ответить сейчас.',ag.id)}
+   BUSY[ag.id]=false;drawFloor()}
+  const m={role:'assistant',from:'Главный агент · итог','c':'--a9',content:'…',agent:'chief'};HIST[id].push(m);if(CUR===id)open(id,true);
+  const fin=await SAMPLE([{role:'user',content:'Ты Главный агент ИИ-офиса. '+CENTER+' Дай пользователю итоговый ответ на его языке (как в вопросе): коротко, по шагам. Затем раздел «Кто что делает»: агенты и люди с задачами. Не выдумывай фактов, которых нет в ответах агентов.\nВОПРОС: '+q+'\nОТВЕТЫ АГЕНТОВ:\n'+(results.map(x=>x.ag.name+' (поручение: '+x.task+'):\n'+x.text).join('\n\n')||'нет, ответь сам кратко')+'\nЗАДАЧИ ЛЮДЯМ: '+(people.map(p=>p.who+': '+p.task).join('; ')||'нет')}],
+   {cache:false,onText:x=>{m.content=x.text;if(CUR===id){const lg=$('log');const mts=lg?lg.querySelectorAll('.mt'):[];const last=mts[mts.length-1];if(last)last.textContent=x.text;if(lg)lg.scrollTop=1e6}}});
+  m.content=fin.text||m.content;
+  if(people.length&&CAN&&DB){people.forEach(p=>addTask('chief',p.task,p.who));say('Главный агент','--a9','Добавил на доску задач: '+people.map(p=>p.who+' — '+p.task).join('; '))}
+  else if(people.length)say('Главный агент','--a9','Предлагаю задачи людям: '+people.map(p=>p.who+' — '+p.task).join('; ')+'. Добавить их на доску может руководитель.');
+ }catch(e){say('Главный агент','--a9',e&&e.code==='rate_limited'?'Слишком много запросов, подождите минуту.':e&&e.code==='not_granted'?'Нет разрешения на обращение к Claude. Разрешите доступ в настройках страницы.':'Не получилось разобрать вопрос. Попробуйте ещё раз.')}
+ BUSY[id]=false;open(id,true);drawFloor()}
+async function readTable(f){const name=f.name;let text='',rows=0;
+ if(/\.(xlsx|xls)$/i.test(name)){if(!window.XLSX)throw new Error('модуль Excel не загрузился');const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
+  wb.SheetNames.slice(0,3).forEach(sn=>{const csv=XLSX.utils.sheet_to_csv(wb.Sheets[sn]);rows+=csv.split('\n').length;text+='--- Лист: '+sn+'\n'+csv+'\n'})}
+ else{text=await f.text();rows=text.split('\n').length}
+ const cut=text.length>60000;return {name,rows,text:cut?text.slice(0,60000):text,cut}}
+// ---------- start
+async function init(){tick();setInterval(()=>{tick();drawFloor()},30000);drawFloor();drawBoard();if(!window.claude||!claude.use)return;
+ try{SAMPLE=await claude.use('sample')}catch(e){}
+ try{DB=await claude.use('db')}catch(e){}
+ try{const u=await claude.use('user');if(u)CAN=!!(await u.canEdit())}catch(e){}
+ CANREAL=CAN;
+ if(window.__IMM&&window.__IMM.preview)CAN=false;
+ if(DB){DB.doc('catalog/tests').onSnapshot(s=>{CAT=s.exists?(s.data().items||[]):[];drawFloor()},()=>{});
+  DB.doc('docs/status').onSnapshot(s=>{DSTAT=s.exists?(s.data().states||{}):{}},()=>{});
+  DB.doc('office/plan').onSnapshot(s=>{PLAN=s.exists?s.data():null;drawBoard()},()=>{});
+  DB.doc('office/tasks').onSnapshot(s=>{TASKS=s.exists?(s.data().items||[]):[];drawBoard();drawFloor()},()=>{});
+  if(CAN){DB.collection('problems').onSnapshot(sn=>{PROBS=[];sn.docs.forEach(d=>{const v=d.data()||{};(v.items||[]).forEach(it=>PROBS.push(Object.assign({name:v.name||'',role:v.role||''},it)))})},()=>{});
+   DB.collection('training').onSnapshot(sn=>{TRAIN=sn.docs.map(d=>d.data()).filter(v=>v&&v.name)},()=>{})}}
+ drawFloor();drawBoard();if(CUR)open(CUR,true);
+ setTimeout(autoPlan,2500)}
+// как человек: в рабочее время руководитель открыл офис, а планёрки сегодня не было: офис-менеджер начинает сам
+function autoPlan(){if(AUTO||!CAN||!SAMPLE||!DB||dayState()[1]!=='work')return;if(PLAN&&PLAN.date===now().date)return;AUTO=true;planDay()}
+window.addEventListener('imm-me',()=>{const I=window.__IMM||{};CAN=I.preview?false:CANREAL;drawFloor();drawBoard()});
+init();
+</script></body></html>

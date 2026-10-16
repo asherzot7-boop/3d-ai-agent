@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><title>Сканер документов — Immunolab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#eef2f9;--card:#fff;--fg:#14233d;--mut:#6b7a90;--line:#e3e9f3;--acc:#2f7be5;--ok:#2fa35b;--bad:#d6455d;--warn:#e5902f;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1522;--card:#172131;--fg:#e6ebf1;--mut:#93a1b4;--line:#263446}}
+:root[data-theme="dark"]{--bg:#0e1522;--card:#172131;--fg:#e6ebf1;--mut:#93a1b4;--line:#263446}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.4}
+.wrap{max-width:560px;margin:0 auto;padding:14px}
+h1{font-size:20px;margin:2px 0}h2{font-size:16px;margin:0 0 8px}
+.sub{color:var(--mut);font-size:13px;margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.tabs{display:flex;gap:6px;margin-bottom:12px}.tabs button{flex:1}
+button,select,input,textarea{font:inherit;color:var(--fg)}
+button{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer}
+button.on,button.pri{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:600}
+button.big{width:100%;padding:18px;font-size:17px}
+button.dng{color:var(--bad)}button:disabled{opacity:.5}
+select,input,textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:3px}
+textarea{min-height:60px}label{display:block;font-size:12px;color:var(--mut);margin-top:10px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+img.pv{width:100%;max-height:300px;object-fit:contain;border-radius:10px;background:#0002}
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;background:var(--bg);margin:2px 4px 2px 0}
+.chip.warn{background:rgba(229,144,47,.18);color:var(--warn)}.chip.ok{background:rgba(47,163,91,.16);color:var(--ok)}.chip.bad{background:rgba(214,69,93,.15);color:var(--bad)}
+.item{display:flex;gap:10px;border-top:1px solid var(--line);padding:10px 0}.item:first-child{border:0}
+.item img{width:64px;height:64px;object-fit:cover;border-radius:8px;flex:none}
+.item .t{font-weight:600}.hint{color:var(--mut);font-size:12px}
+#msg{display:none;padding:10px 12px;border-radius:10px;border:1px solid var(--warn);background:var(--card);margin-bottom:12px;font-size:14px}
+.spin{display:inline-block;width:16px;height:16px;border:3px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:s 1s linear infinite;vertical-align:-3px;margin-right:8px}@keyframes s{to{transform:rotate(360deg)}}
+[hidden]{display:none!important}
+</style></head><body><div class="wrap">
+<h1>📷 Сканер документов</h1>
+<p class="sub">Сфотографируйте документ. ИИ прочитает его, вы проверите, и запись попадёт в нужную папку.</p>
+<div id="msg"></div>
+<div class="card" id="who" hidden><h2>Кто вы?</h2><select id="whoSel"></select><div style="margin-top:10px"><button class="pri big" id="whoBtn">Продолжить</button></div></div>
+<div id="main" hidden>
+ <div class="tabs"><button class="on" data-t="snap">📷 Снять</button><button data-t="mine">🗂 Мои</button><button data-t="all" id="allTab" hidden>🧭 Архив</button></div>
+ <section id="t-snap">
+  <div class="card"><label style="margin:0">Фото документа</label>
+   <input type="file" id="file" accept="image/*" capture="environment" style="display:none">
+   <button class="pri big" id="shot" style="margin-top:8px">📷 Сфотографировать</button>
+   <button style="width:100%;margin-top:8px" id="pick">🖼 Выбрать из галереи</button>
+   <div class="hint" style="margin-top:8px">Снимайте при хорошем свете, документ целиком. Для журналов: одна страница на один снимок.</div></div>
+  <div class="card" id="work" hidden><img class="pv" id="pv"><div id="ai" style="margin-top:10px"></div>
+   <div id="form" hidden>
+    <label>Папка</label><select id="fFolder"></select>
+    <label>Документ из списка</label><select id="fItem"></select>
+    <label>Название</label><input id="fTitle">
+    <div class="row2"><div><label>Дата</label><input id="fDate" type="date"></div><div><label>Номер</label><input id="fNum"></div></div>
+    <label>От кого / кому (поставщик, организация)</label><input id="fParty">
+    <div class="row2"><div><label>Сумма, сум</label><input id="fAmt" inputmode="numeric"></div><div><label>Срок действия до</label><input id="fExp" type="date"></div></div>
+    <label>Заметки</label><textarea id="fNotes"></textarea>
+    <div id="fWarn" style="margin-top:8px"></div>
+    <div class="row2" style="margin-top:12px"><button id="again">Переснять</button><button class="pri" id="save">Сохранить</button></div>
+   </div></div>
+ </section>
+ <section id="t-mine" hidden><div class="card"><h2>Мои документы</h2><div id="mineList"></div></div></section>
+ <section id="t-all" hidden><div class="card"><h2>Архив всех сотрудников</h2>
+  <select id="aFold"></select><input id="aQ" placeholder="Поиск" style="margin-top:8px"><div id="aStat" class="hint" style="margin:8px 0"></div><div id="allList"></div></div></section>
+</div></div>
+<script>
+const FOLD=[{"id": "1", "n": "1. Регистрация и устав", "items": [["a1", "Свидетельство о государственной регистрации ООО"], ["a2", "Устав ООО"], ["a3", "Приказ или решение о назначении директора"], ["a4", "Налоговый учёт (ИНН) и коды видов деятельности"], ["a5", "Банковские реквизиты и договор расчётного счёта"], ["a6", "Печать и образцы подписей"]]}, {"id": "2", "n": "2. Лицензии и разрешения", "items": [["b1", "Лицензия на медицинскую деятельность (с перечнем услуг)"], ["b2", "Санитарно-эпидемиологическое заключение"], ["b3", "Разрешения на лабораторные исследования (если нужны отдельно)"], ["b4", "Документы по пожарной безопасности"], ["b5", "Регистрация и разрешения на используемые вакцины и препараты"]]}, {"id": "3", "n": "3. Сотрудники (кадры)", "items": [["c1", "Трудовые договоры"], ["c2", "Приказы о приёме, переводе, увольнении"], ["c3", "Личные дела сотрудников"], ["c4", "Должностные инструкции (черновик есть в 3D-модели)"], ["c5", "Правила внутреннего распорядка (8:00–17:00, обед 12:00–13:00)"], ["c6", "Табель и учёт рабочего времени (Clockster)"], ["c7", "График отпусков"], ["c8", "Дипломы, сертификаты и допуски врачей и медсестёр"], ["c9", "Медосмотры и санитарные книжки сотрудников"], ["c10", "Журнал инструктажа по охране труда"], ["c11", "Согласия сотрудников на обработку персональных данных"], ["c12", "Договоры с врачами (оклад или аренда кабинета, в том числе иностранные врачи)"]]}, {"id": "4", "n": "4. Клиенты и услуги", "items": [["d1", "Прайс-лист вакцинации (есть, от 02.09.2025)"], ["d2", "Прайс-лист лабораторных анализов"], ["d3", "Прайс-лист клиники (консультации, процедуры)"], ["d4", "Публичная оферта или договор на оказание услуг"], ["d5", "Информированное добровольное согласие (вакцинация, забор крови, процедуры)"], ["d6", "Согласие клиента на обработку персональных данных"], ["d7", "Книга жалоб и предложений"], ["d8", "Бланки: направления, результаты анализов, справки"]]}, {"id": "5", "n": "5. Лаборатория", "items": [["e1", "Стандартные операционные процедуры (СОП) по каждому анализу"], ["e2", "Правила забора, хранения и перевозки проб (в том числе выездной)"], ["e3", "Журнал приёма проб"], ["e4", "Журнал результатов и подтверждения"], ["e5", "Журнал контроля качества"], ["e6", "Паспорта, поверка и калибровка приборов"], ["e7", "Договоры обслуживания приборов"], ["e8", "Журнал учёта реагентов (приход, расход, срок годности)"]]}, {"id": "6", "n": "6. Вакцинация", "items": [["f1", "Накладные и сертификаты качества на вакцины"], ["f2", "Журнал учёта вакцин (приход, расход, остаток)"], ["f3", "Журнал температуры холодильника с вакцинами"], ["f4", "Журнал прививок и прививочные сертификаты"], ["f5", "Противошоковая аптечка: перечень и сроки годности"], ["f6", "Инструкция при поствакцинальных реакциях"], ["f7", "Свод по филиалам в 12 районах (прививки, остаток доз)"]]}, {"id": "7", "n": "7. Санитария и безопасность", "items": [["g1", "График уборки и дезинфекции помещений"], ["g2", "Журнал дезинфекции и кварцевания"], ["g3", "Договор на вывоз медицинских отходов"], ["g4", "Договор на дезинсекцию и дератизацию"], ["g5", "План эвакуации (есть) и противопожарная инструкция"], ["g6", "Журнал противопожарных инструктажей"], ["g7", "Журнал стерилизации инструментов (если применяется)"]]}, {"id": "8", "n": "8. Финансы", "items": [["h1", "Договор аренды здания"], ["h3", "Договор эквайринга: терминал Humo/Uzcard и приём QR"], ["h4", "Онлайн-касса и фискальные чеки"], ["h5", "Кассовая книга и ежедневный кассовый отчёт"], ["h7", "Налоговая и финансовая отчётность"]]}, {"id": "9", "n": "9. Системы и данные", "items": [["i1", "Лицензия и доступы Sirocco"], ["i2", "Clockster: доступы и настройки"], ["i3", "Электронная очередь: кабинеты и график"], ["i4", "Порядок выгрузки данных в Excel (кто и когда)"], ["i5", "Резервные копии и список паролей (хранить у директора)"]]}, {"id": "10", "n": "10. Договоры: коммунальные и партнёры", "items": [["j1", "Договор на электроснабжение"], ["j2", "Договор на газ и отопление"], ["j3", "Договор на водоснабжение и канализацию"], ["j4", "Договор на вывоз бытового мусора"], ["j5", "Договор на интернет и связь (в том числе телефоны call-center)"], ["j6", "Договор на охрану, видеонаблюдение и пожарную сигнализацию"], ["j7", "Договоры на обслуживание кондиционеров, вентиляции и холодильников"], ["j8", "Ежемесячные акты сверки и оплата коммунальных услуг"], ["h6", "Договоры с поставщиками партнёров: вакцины, реагенты, расходники"], ["k1", "Договоры с партнёрскими лабораториями (если пробы отправляются на сторону)"], ["k2", "Договоры с филиалами и партнёрами в 12 районах Наманганской области"], ["k3", "Договоры с компаниями-клиентами (корпоративное обслуживание, медосмотры организаций)"], ["k4", "Договоры со страховыми компаниями (если работаете)"], ["k5", "Договор на перевозку проб и вакцин (курьер, водитель)"], ["k6", "Договор с бухгалтером или бухгалтерской фирмой"], ["k7", "Договоры на рекламу и SMM (если есть)"], ["k8", "Соглашения о конфиденциальности с партнёрами (данные клиентов)"]]}];
+const STAFF=["Абдуллаев Акмал", "Саидов Дилмурод", "Мансуров Авазбек", "Алишеров Юсуфбек", "Абдукаххорова Райхона", "Маликжонова Одина", "Тошбоев Улугбек", "Каримова Гулчирой", "Юсупов Абдулазиз", "Атабаева Жамила", "Муножат", "Тожимирзаева Комила", "Бакиев Дилмурод", "Бакиев Жохонгир", "Исматов Рустам", "Шомирзаева Манзура", "Собирова Нафиса", "Ахмедов Шерзод", "Другой сотрудник"];
+const $=id=>document.getElementById(id);
+const mk=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
+const opt=(s,v,t)=>{const o=document.createElement('option');o.value=v;o.textContent=t;s.appendChild(o)};
+let db=null,user=null,sample=null,uid=null,owner=false,myName=(()=>{try{return localStorage.getItem('scan_name')||''}catch(e){return ''}})(),cur=null;
+function note(t){const m=$('msg');m.textContent=t;m.style.display=t?'block':'none'}
+STAFF.forEach(n=>opt($('whoSel'),n,n));if(myName)$('whoSel').value=myName;
+opt($('fFolder'),'','— выберите папку —');FOLD.forEach(f=>opt($('fFolder'),f.id,f.n));
+opt($('aFold'),'','Все папки');FOLD.forEach(f=>opt($('aFold'),f.id,f.n));
+function fillItems(fid,sel){const s=$('fItem');s.textContent='';opt(s,'','Другое (нет в списке)');const f=FOLD.find(x=>x.id==fid);if(f)f.items.forEach(i=>opt(s,i[0],i[1]));s.value=sel||''}
+$('fFolder').onchange=()=>fillItems($('fFolder').value,'');
+// вкладки
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x==b));['snap','mine','all'].forEach(k=>$('t-'+k).hidden=k!=b.dataset.t)});
+// запуск
+async function init(){
+ if(!window.claude||!claude.use){note('Программа работает только при открытии через Claude.');return}
+ try{db=await claude.use('db');user=await claude.use('user');sample=await claude.use('sample')}catch(e){}
+ if(!db){note('Нет доступа к базе. Попросите руководителя дать вам доступ к этой странице.');return}
+ try{uid=user?await user.id():null;owner=user?await user.isOwner():false}catch(e){}
+ if(!uid&&!owner){note('Не удалось определить ваш аккаунт.');return}
+ let ok=false;if(sample){try{const l=await sample.limits();ok=!!l.images}catch(e){}}
+ if(!ok)note('Чтение фото ИИ сейчас недоступно: документ всё равно можно сохранить, заполнив поля вручную.');
+ if(myName)start();else $('who').hidden=false}
+$('whoBtn').onclick=()=>{myName=$('whoSel').value;try{localStorage.setItem('scan_name',myName)}catch(e){}$('who').hidden=true;start()};
+function start(){$('main').hidden=false;if(owner){$('allTab').hidden=false;loadAll()}subMine()}
+// фото
+$('shot').onclick=()=>{$('file').setAttribute('capture','environment');$('file').click()};
+$('pick').onclick=()=>{$('file').removeAttribute('capture');$('file').click()};
+$('file').onchange=async()=>{const f=$('file').files[0];$('file').value='';if(f)await handle(f)};
+$('again').onclick=()=>{$('work').hidden=true;cur=null};
+function loadImg(f){return new Promise((res,rej)=>{const u=URL.createObjectURL(f),i=new Image();i.onload=()=>{URL.revokeObjectURL(u);res(i)};i.onerror=()=>rej(new Error('img'));i.src=u})}
+function toBlob(img,max,q){const k=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);return new Promise(r=>c.toBlob(r,'image/jpeg',q))}
+const dataUrl=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b)});
+async function smallPhoto(img){for(const [m,q] of [[900,.55],[800,.45],[700,.4],[600,.35]]){const u=await dataUrl(await toBlob(img,m,q));if(u.length<185000)return u}return await dataUrl(await toBlob(img,500,.3))}
+function prompt(){return 'Ты помощник медицинского центра Immunolab (Наманган, Узбекистан). На фото документ или страница журнала (русский или узбекский язык). Определи, что это, и верни ТОЛЬКО JSON: {"kind":"вид документа","folder":"id папки","item":"id документа из списка или пустая строка","title":"название","date":"ГГГГ-ММ-ДД или пустая строка","number":"номер","party":"от кого или кому","amount":число или 0,"expiry":"ГГГГ-ММ-ДД или пустая строка","notes":"1-2 строки главного","sensitive":true или false,"confidence":число от 0 до 1,"warnings":["короткие замечания"]}. Папки и документы чек-листа: '+FOLD.map(f=>f.n+' (id '+f.id+'): '+f.items.map(i=>i[0]+' '+i[1]).join('; ')).join(' | ')+'. Правила: не выдумывай, чего не видно, оставь пустым. Если на фото личные данные клиента или результаты его анализов, поставь sensitive=true, не переписывай имя и диагнозы, в title напиши только вид документа. Для журнала температуры в notes запиши диапазон значений и даты. В warnings укажи, если фото плохое, обрезано или неразборчиво.'}
+async function handle(f){
+ $('work').hidden=false;$('form').hidden=true;$('save').disabled=false;$('ai').textContent='';
+ let img;try{img=await loadImg(f)}catch(e){$('ai').textContent='Не удалось открыть фото.';return}
+ const big=await toBlob(img,1600,.8);$('pv').src=URL.createObjectURL(big);
+ cur={img,photoP:smallPhoto(img),ai:null};
+ let r={};
+ if(sample){const sp=mk('span');sp.className='spin';$('ai').textContent='';$('ai').appendChild(sp);$('ai').appendChild(document.createTextNode('ИИ читает документ…'));
+  try{r=await sample.json(prompt(),{images:[big]})}catch(e){r={};$('ai').textContent='ИИ не смог прочитать'+(e&&e.code?' ('+e.code+')':'')+'. Заполните поля вручную.'}}
+ else $('ai').textContent='Заполните поля вручную.';
+ if(sample&&r&&(r.title||r.kind)){$('ai').textContent='';$('ai').appendChild(mk('span','chip ok','ИИ: '+(r.kind||'документ')));if(typeof r.confidence=='number')$('ai').appendChild(mk('span','chip'+(r.confidence<.5?' warn':''),'уверенность '+Math.round(r.confidence*100)+'%'))}
+ cur.ai=r||{};showForm(r||{})}
+function showForm(r){
+ $('form').hidden=false;$('fFolder').value=FOLD.some(f=>f.id==r.folder)?r.folder:'';fillItems($('fFolder').value,r.item);
+ $('fTitle').value=r.title||'';$('fDate').value=/^\d{4}-\d\d-\d\d$/.test(r.date||'')?r.date:'';$('fNum').value=r.number||'';$('fParty').value=r.party||'';$('fAmt').value=r.amount?String(r.amount):'';$('fExp').value=/^\d{4}-\d\d-\d\d$/.test(r.expiry||'')?r.expiry:'';$('fNotes').value=r.notes||'';
+ const w=$('fWarn');w.textContent='';(r.warnings||[]).forEach(x=>w.appendChild(mk('span','chip warn',String(x))));if(r.sensitive)w.appendChild(mk('span','chip bad','Личные данные клиента: имена и диагнозы не сохраняйте'));
+ if(!$('fFolder').value)w.appendChild(mk('span','chip warn','Выберите папку'))}
+// сохранение
+$('save').onclick=async()=>{
+ if(!cur||!db)return;if(!$('fFolder').value){note('Выберите папку.');return}note('');$('save').disabled=true;
+ try{const photo=await cur.photoP;const id=Date.now().toString(36)+Math.random().toString(36).slice(2,5),docId=uid||'owner';
+  const rec={folder:$('fFolder').value,item:$('fItem').value,kind:(cur.ai&&cur.ai.kind)||'',title:$('fTitle').value.trim()||'Без названия',date:$('fDate').value,number:$('fNum').value.trim(),party:$('fParty').value.trim(),amount:+($('fAmt').value.replace(/\D/g,''))||0,expiry:$('fExp').value,notes:$('fNotes').value.trim(),sensitive:!!(cur.ai&&cur.ai.sensitive),photo,ts:Date.now(),by:myName};
+  await db.doc('scans/'+docId+'/items/'+id).set(rec);
+  const mref=db.doc('scans/'+docId),ms=await mref.get(),old=ms.exists?ms.data():{};await mref.set({name:myName,count:(old.count||0)+1,updated:Date.now()});
+  $('work').hidden=true;cur=null;note('Сохранено в папку «'+FOLD.find(f=>f.id==rec.folder).n+'».');setTimeout(()=>note(''),4000)}
+ catch(e){note('Не удалось сохранить'+(e&&e.code?' ('+e.code+')':'')+'. Попробуйте ещё раз или попросите руководителя дать доступ.');$('save').disabled=false}};
+// списки
+const fname=id=>(FOLD.find(f=>f.id==id)||{n:'Без папки'}).n,iname=(fid,id)=>{const f=FOLD.find(x=>x.id==fid);const i=f&&f.items.find(x=>x[0]==id);return i?i[1]:''};
+const fd=t=>new Date(t).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+function card(r,del){const d=mk('div','item');const im=mk('img');im.src=r.photo;im.onclick=()=>window.open(r.photo,'_blank');d.appendChild(im);const b=mk('div');b.style.flex='1';b.appendChild(mk('div','t',r.title));
+ const m=mk('div','hint',fname(r.folder)+(r.item?' · '+iname(r.folder,r.item):''));b.appendChild(m);
+ const x=[];if(r.date)x.push('дата '+r.date);if(r.number)x.push('№ '+r.number);if(r.party)x.push(r.party);if(r.amount)x.push(r.amount.toLocaleString('ru-RU')+' сум');if(r.expiry)x.push('до '+r.expiry);
+ if(x.length)b.appendChild(mk('div','hint',x.join(' · ')));if(r.notes)b.appendChild(mk('div','hint',r.notes));
+ b.appendChild(mk('div','hint',(r.by||'')+' · '+fd(r.ts)));if(r.sensitive)b.appendChild(mk('span','chip bad','личные данные'));
+ if(del){const k=mk('button','dng','Удалить');k.style.cssText='padding:4px 10px;font-size:12px;margin-top:4px';k.onclick=()=>del(r);b.appendChild(k)}d.appendChild(b);return d}
+function subMine(){if(!uid)return;db.collection('scans/'+uid+'/items').onSnapshot(s=>{const L=s.docs.map(d=>d.data()).sort((a,b)=>b.ts-a.ts),box=$('mineList');box.textContent='';if(!L.length)box.appendChild(mk('div','hint','Пока ничего не сохранено.'));L.forEach(r=>box.appendChild(card(r)))},()=>{})}
+let ALL={},SUBS={};
+function loadAll(){db.collection('scans').onSnapshot(s=>{s.docs.forEach(d=>{if(SUBS[d.id])return;SUBS[d.id]=1;db.collection('scans/'+d.id+'/items').onSnapshot(ss=>{ALL[d.id]=ss.docs.map(x=>Object.assign({_id:x.id,_u:d.id},x.data()));drawAll()},()=>{})})},()=>{});drawAll()}
+function drawAll(){const q=$('aQ').value.trim().toLowerCase(),fo=$('aFold').value;let L=[].concat(...Object.values(ALL)).sort((a,b)=>b.ts-a.ts);const total=L.length;
+ L=L.filter(r=>(!fo||r.folder==fo)&&(!q||[r.title,r.party,r.number,r.notes,r.by].join(' ').toLowerCase().includes(q)));
+ const today=[].concat(...Object.values(ALL)).filter(r=>new Date(r.ts).toDateString()==new Date().toDateString()).length;
+ $('aStat').textContent='Всего: '+total+' · сегодня: '+today+' · показано: '+L.length;
+ const box=$('allList');box.textContent='';if(!L.length)box.appendChild(mk('div','hint','Нет записей.'));
+ L.forEach(r=>box.appendChild(card(r,async x=>{if(!confirm('Удалить запись?'))return;try{await db.doc('scans/'+x._u+'/items/'+x._id).delete()}catch(e){}})))}
+$('aFold').onchange=drawAll;$('aQ').oninput=drawAll;
+init();
+</script></body></html>

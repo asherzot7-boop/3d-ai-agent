@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><title>Мактаб Immunolab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#f4f6f8;--fg:#1b2430;--card:#fff;--line:#d5dbe2;--mut:#5d6a79;--acc:#2f7be5;--ok:#2fa35b;--bad:#d6455d;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a22;--fg:#e6ebf1;--card:#1d2631;--line:#33404f;--mut:#9aa8b8}}
+:root[data-theme="dark"]{--bg:#141a22;--fg:#e6ebf1;--card:#1d2631;--line:#33404f;--mut:#9aa8b8}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.45}
+.wrap{max-width:820px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:4px 0}h2{font-size:17px;margin:0 0 8px}h3{font-size:15px;margin:10px 0 4px}
+.sub{color:var(--mut);font-size:14px;margin:0 0 12px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+button,select,input,textarea{font:inherit;color:var(--fg)}
+button{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer}
+button.on,button.pri{background:var(--acc);color:#fff;border-color:var(--acc)}
+button:disabled{opacity:.5}
+select,input,textarea{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;box-sizing:border-box}
+textarea{width:100%;min-height:70px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.ph{cursor:pointer}.ph .tr{display:none;margin-top:6px;font-size:14px;color:var(--mut)}.ph.open .tr{display:block}.ph .tr b{color:var(--fg)}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;align-items:center}
+.step{margin:4px 0 4px 18px}
+.warn{border-left:4px solid var(--bad)}
+.lhead{display:grid;gap:4px}.lhead .meta{font-size:13px;color:var(--mut)}
+.day{border-top:1px solid var(--line);padding:8px 0}.day:first-of-type{border-top:0}
+.day h3{display:flex;justify-content:space-between;gap:8px;margin:0 0 4px}.day h3 span{font-size:12px;color:var(--mut);font-weight:500}
+.tk{display:flex;gap:8px;align-items:flex-start;padding:4px 0;cursor:pointer}.tk input{margin-top:3px;width:17px;height:17px;flex:none;accent-color:var(--acc)}
+.tk input:checked+span{color:var(--mut);text-decoration:line-through}
+.pbar{height:7px;background:var(--line);border-radius:6px;overflow:hidden;margin-top:6px}.pbar i{display:block;height:100%;background:var(--ok)}
+.qa{border-top:1px solid var(--line);padding:8px 0}.qa:first-child{border-top:0}.qa button{margin-top:4px;font-size:13px;padding:5px 10px}
+.qa .ans{margin-top:4px;color:var(--ok)}
+ul.plain{margin:4px 0 0 18px;padding:0}ul.plain li{margin:3px 0}
+.chat{max-height:340px;overflow:auto;white-space:pre-wrap}
+.msg{padding:6px 10px;border-radius:10px;margin:6px 0;background:var(--bg);border:1px solid var(--line)}
+.msg.me{background:var(--acc);color:#fff;border-color:var(--acc)}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{border-top:1px solid var(--line);padding:6px 4px;text-align:left;vertical-align:top}
+[hidden]{display:none!important}
+</style></head><body><div class="wrap">
+<h1>Мактаб Immunolab</h1>
+<p class="sub">Обучение для каждого сотрудника: пособие по должности на 5 дней, языки для общения с клиентами, оплата, анализы и тренажёр диалога.</p>
+<div class="tabs" id="tabs"></div>
+
+<section id="t-learn">
+ <div class="row" id="lPickRow"><label for="lPick" style="font-size:14px">Пособие для:</label><select id="lPick" style="flex:1;min-width:200px"></select></div>
+ <div id="lBody"></div>
+ <div class="card" id="lAdmin" hidden><h2>Прогресс сотрудников</h2><div id="lProg" class="sub" style="margin:0"></div></div>
+</section>
+<section id="t-lang" hidden>
+ <div class="row">Показывать сначала: <select id="src"><option value="0">Русский</option><option value="1">O'zbekcha</option><option value="2">English</option></select><span class="sub" style="margin:0">Нажмите на фразу, чтобы увидеть перевод.</span></div>
+ <div id="phrases"></div>
+</section>
+
+<section id="t-pay" hidden>
+ <div class="card"><h2>Как принять оплату</h2><p class="sub" style="margin:0">Общий порядок. Точные кнопки зависят от вашего терминала и банка: уточните у руководителя.</p></div>
+ <div class="card"><h3>Карта Humo</h3><ol class="step"><li>Назовите сумму и покажите её клиенту.</li><li>Введите сумму на терминале.</li><li>Попросите клиента приложить, вставить карту или смахнуть.</li><li>Если нужно, клиент вводит PIN.</li><li>Дождитесь «Одобрено», выдайте чек.</li><li>Отметьте оплату в программе (Sirocco) и выдайте талон очереди.</li></ol></div>
+ <div class="card"><h3>Карта Uzcard</h3><ol class="step"><li>Порядок тот же, что и для Humo: сумма, терминал, карта, PIN.</li><li>Проверьте, что терминал принимает именно Uzcard: если нет, предложите Humo или QR.</li><li>После «Одобрено» выдайте чек и отметьте оплату.</li></ol></div>
+ <div class="card"><h3>QR-код</h3><ol class="step"><li>Покажите QR-код (на стойке стоит подставка с QR).</li><li>Клиент сканирует его в своём приложении и вводит сумму, которую вы назвали.</li><li>Попросите показать экран «Платёж выполнен» и проверьте сумму и получателя.</li><li>Убедитесь, что деньги пришли, отметьте оплату в программе.</li></ol></div>
+ <div class="card warn"><h3>Если что-то пошло не так</h3><ol class="step"><li>Оплата не прошла: не повторяйте сразу несколько раз. Предложите другую карту или QR.</li><li>Деньги списались, но чека нет: не берите оплату второй раз, позовите управляющего и запишите время и сумму.</li><li>Клиент просит вернуть деньги: возврат делает только руководитель.</li><li>Всегда называйте клиенту сумму до оплаты и выдавайте чек.</li></ol></div>
+</section>
+
+<section id="t-tests" hidden>
+ <div class="card"><h2>Анализы и вакцинация</h2><p class="sub" style="margin:0" id="catNote">Здесь список всех анализов с ценой, подготовкой и сроком. Список заполняет руководитель.</p></div>
+ <div class="row"><input id="q" placeholder="Поиск анализа" style="flex:1;min-width:160px"><select id="cf"></select></div>
+ <div id="list"></div>
+ <div class="card" id="editor" hidden>
+  <h3>Добавить анализы (только руководитель)</h3>
+  <div class="row"><input id="n" placeholder="Название" style="flex:2;min-width:150px"><select id="c"></select><input id="p" placeholder="Цена, сум" style="width:110px"><input id="tm" placeholder="Срок" style="width:110px"></div>
+  <input id="pr" placeholder="Подготовка (например: натощак)" style="width:100%;margin-bottom:8px">
+  <button class="pri" id="add">Добавить</button>
+  <h3>Или вставьте прайс-лист</h3>
+  <p class="sub" style="margin:0 0 6px">Каждая строка: Название; Категория; Цена; Срок; Подготовка (категорию, цену и остальное можно пропустить).</p>
+  <textarea id="bulk" placeholder="Общий анализ крови; Гематология; 50000; 1 день; натощак"></textarea>
+  <div class="row"><button class="pri" id="bulkBtn">Добавить из списка</button><span id="est" class="sub" style="margin:0"></span></div>
+ </div>
+</section>
+
+<section id="t-chat" hidden>
+ <div class="card"><h2>Тренажёр диалога</h2><p class="sub" style="margin:0">Клиента играет ИИ. Вы отвечаете как регистратор, а после каждой реплики получаете оценку и подсказку.</p></div>
+ <div class="row"><select id="lg"><option value="русском">Русский</option><option value="узбекском">O'zbekcha</option><option value="английском">English</option></select>
+ <select id="sc"><option>Хочу сдать общий анализ крови</option><option>Привёл ребёнка на прививку</option><option>Оплата картой не прошла</option><option>Спрашиваю, когда будут результаты</option><option>Спрашиваю цены на анализы</option></select><button class="pri" id="go">Начать</button></div>
+ <div class="card chat" id="chat" hidden></div>
+ <div class="row" id="reply" hidden><input id="me" placeholder="Ваш ответ клиенту" style="flex:1;min-width:180px"><button class="pri" id="sendMe">Ответить</button></div>
+</section>
+</div>
+<script>
+const PH=[
+['Здравствуйте! Добро пожаловать в Immunolab.',"Assalomu alaykum! Immunolab'ga xush kelibsiz.",'Hello! Welcome to Immunolab.'],
+['Чем могу вам помочь?',"Sizga qanday yordam bera olaman?",'How can I help you?'],
+['Назовите, пожалуйста, ваше имя и фамилию.',"Iltimos, ismingiz va familiyangizni ayting.",'Please tell me your first and last name.'],
+['Какой анализ вы хотите сдать?',"Qaysi tahlilni topshirmoqchisiz?",'Which test would you like to take?'],
+['У вас есть направление от врача?',"Shifokordan yo'llanmangiz bormi?",'Do you have a referral from a doctor?'],
+['Этот анализ нужно сдавать натощак.',"Bu tahlilni och qoringa topshirish kerak.",'This test must be taken on an empty stomach.'],
+['Стоимость анализа — … сум.',"Tahlil narxi — … so'm.",'The cost of the test is … soums.'],
+['Как вы будете платить: картой Humo, Uzcard или по QR-коду?',"Qanday to'laysiz: Humo, Uzcard kartasi yoki QR-kod orqali?",'How would you like to pay: Humo, Uzcard, or QR code?'],
+['Приложите карту к терминалу, пожалуйста.',"Iltimos, kartani terminalga tekkizing.",'Please tap your card on the terminal.'],
+['Отсканируйте QR-код и подтвердите оплату.',"QR-kodni skanerlang va to'lovni tasdiqlang.",'Please scan the QR code and confirm the payment.'],
+['Оплата прошла успешно. Вот ваш чек.',"To'lov muvaffaqiyatli o'tdi. Mana chekingiz.",'The payment was successful. Here is your receipt.'],
+['Извините, оплата не прошла. Попробуйте другую карту или QR-код.',"Kechirasiz, to'lov amalga oshmadi. Boshqa karta yoki QR-kodni sinab ko'ring.",'Sorry, the payment did not go through. Please try another card or a QR code.'],
+['Ваш номер в очереди — … Подождите, пожалуйста, вас вызовут.',"Sizning navbat raqamingiz — … Iltimos, kutib turing, sizni chaqirishadi.",'Your queue number is … Please wait, we will call you.'],
+['Пройдите в кабинет забора крови (комната 18).',"Qon olish xonasiga (18-xona) o'ting.",'Please go to the blood collection room (room 18).'],
+['Для вакцинации пройдите к медсестре в кабинет вакцинации (комнаты 6–7).',"Emlash uchun hamshiraga, emlash xonasiga (6–7-xonalar) o'ting.",'For vaccination, please go to the nurse in the vaccination room (rooms 6–7).'],
+['Результаты будут готовы через …',"Natijalar … dan keyin tayyor bo'ladi.",'The results will be ready in …'],
+['Говорите медленнее, пожалуйста.',"Iltimos, sekinroq gapiring.",'Please speak more slowly.'],
+['Спасибо за обращение! Будьте здоровы.',"Murojaatingiz uchun rahmat! Sog' bo'ling.",'Thank you for visiting! Stay healthy.']];
+const LN=['Русский',"O'zbekcha",'English'];
+const CATS=['Гематология','Исследование крови','ИФА','ПЦР','Моча','Вакцинация','Другое'];
+const $=id=>document.getElementById(id);
+function mk(t,c,x){const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+// вкладки
+const TABS=[['learn','Обучение'],['lang','Языки'],['pay','Оплата'],['tests','Анализы'],['chat','Тренажёр']];
+TABS.forEach(([k,t],i)=>{const b=mk('button',i?'':'on',t);b.onclick=()=>{TABS.forEach(([k2])=>$('t-'+k2).hidden=k2!=k);[...$('tabs').children].forEach(x=>x.classList.remove('on'));b.classList.add('on')};$('tabs').appendChild(b)});
+// фразы
+function renderPh(){const s=+$('src').value,box=$('phrases');box.textContent='';
+ PH.forEach(p=>{const d=mk('div','card ph');d.appendChild(mk('div',null,p[s]));const tr=mk('div','tr');[0,1,2].filter(i=>i!=s).forEach(i=>{const l=mk('div');l.appendChild(mk('b',null,LN[i]+': '));l.appendChild(document.createTextNode(p[i]));tr.appendChild(l)});d.appendChild(tr);d.onclick=()=>d.classList.toggle('open');box.appendChild(d)})}
+$('src').onchange=renderPh;renderPh();
+// каталог анализов
+let db=null,user=null,admin=false,items=[];
+CATS.forEach((c,i)=>{const o=document.createElement('option');o.value=c;o.textContent=c;$('c').appendChild(o)});
+{const o=document.createElement('option');o.value='';o.textContent='Все категории';$('cf').appendChild(o);CATS.forEach(c=>{const o2=document.createElement('option');o2.value=c;o2.textContent=c;$('cf').appendChild(o2)})}
+const money=v=>v?Number(v).toLocaleString('ru-RU')+' сум':'';
+function renderList(){const box=$('list');box.textContent='';const q=$('q').value.trim().toLowerCase(),cf=$('cf').value;
+ const L=items.filter(t=>(!cf||t.cat==cf)&&(!q||t.name.toLowerCase().includes(q)));
+ if(!L.length){box.appendChild(mk('div','sub',items.length?'Ничего не найдено.':'Список пока пуст. Руководитель добавит его ниже.'));return}
+ const tb=mk('table');const h=mk('tr');['Название','Категория','Цена','Срок','Подробности',''].forEach(x=>h.appendChild(mk('th',null,x)));tb.appendChild(h);
+ L.forEach(t=>{const r=mk('tr');[t.name,t.cat||'',money(t.price),t.time||'',t.prep||''].forEach(x=>r.appendChild(mk('td',null,x)));const td=mk('td');if(admin){const b=mk('button',null,'×');b.title='Удалить';b.onclick=()=>removeItem(t.id);td.appendChild(b)}r.appendChild(td);tb.appendChild(r)});box.appendChild(tb)}
+$('q').oninput=renderList;$('cf').onchange=renderList;
+async function save(next){try{await db.doc('catalog/tests').set({items:next,updated:Date.now()})}catch(e){$('est').textContent='Не удалось сохранить'+(e&&e.code?' ('+e.code+')':'')}}
+function rid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+$('add').onclick=()=>{const name=$('n').value.trim();if(!name||!db)return;save(items.concat([{id:rid(),name,cat:$('c').value,price:+$('p').value.replace(/\D/g,'')||0,time:$('tm').value.trim(),prep:$('pr').value.trim()}]));['n','p','tm','pr'].forEach(i=>$(i).value='')};
+$('bulkBtn').onclick=()=>{if(!db)return;const add=[];$('bulk').value.split('\n').forEach(line=>{const p=line.split(/[;\t]/).map(x=>x.trim());if(!p[0])return;add.push({id:rid(),name:p[0],cat:CATS.includes(p[1])?p[1]:(p[1]||'Другое'),price:+(p[2]||'').replace(/\D/g,'')||0,time:p[3]||'',prep:p[4]||''})});
+ if(!add.length)return;save(items.concat(add));$('bulk').value='';$('est').textContent='Добавлено: '+add.length};
+function removeItem(id){save(items.filter(t=>t.id!=id))}
+async function init(){
+ if(!window.claude||!claude.use){$('catNote').textContent='Список анализов доступен только при открытии через claude.ai.';return}
+ try{db=await claude.use('db');user=await claude.use('user')}catch(e){}
+ try{admin=user?(await user.canEdit()):false}catch(e){}
+ $('editor').hidden=!(db&&admin);
+ if(db)db.doc('catalog/tests').onSnapshot(s=>{items=s.exists?(s.data().items||[]):[];renderList()},()=>{renderList()});else renderList();
+ let sample=null;try{sample=await claude.use('sample')}catch(e){}
+ if(!sample){$('tabs').lastChild.hidden=true}else setupChat(sample);
+}
+renderList();
+// тренажёр диалога
+function setupChat(sample){
+ let turns=[],busy=false;
+ const add=(who,text)=>{const m=mk('div','msg'+(who=='me'?' me':''),text);$('chat').appendChild(m);$('chat').scrollTop=1e5};
+ $('go').onclick=async()=>{
+  const instr='Ты играешь клиента лаборатории Immunolab (Наманган, Узбекистан) в тренировочном диалоге с регистратором. Говори только на '+$('lg').value+' языке. Сценарий: '+$('sc').value+'. Правила: отвечай как клиент, 1–2 короткие реплики. Каждый ответ после реплики регистратора заканчивай строкой «Оценка:» на русском (1–2 предложения: понятен ли язык, вежливость, ошибки; дай лучшую фразу на языке клиента). Не называй цены и правила лаборатории сам, их говорит регистратор.';
+  turns=[{role:'user',content:instr+'\n\nНачни диалог: произнеси первую реплику клиента, без оценки.'}];
+  $('chat').hidden=false;$('reply').hidden=false;$('chat').textContent='';$('go').disabled=true;await ask();$('go').disabled=false};
+ async function ask(){busy=true;$('sendMe').disabled=true;const m=mk('div','msg','…');$('chat').appendChild(m);
+  try{const r=await sample(turns,{cache:false,onText:x=>{m.textContent=x.text}});m.textContent=r.text;turns.push({role:'assistant',content:r.text})}catch(e){m.textContent='Не получилось получить ответ'+(e&&e.code?' ('+e.code+')':'')+'. Попробуйте ещё раз.';turns.pop()}
+  busy=false;$('sendMe').disabled=false}
+ $('sendMe').onclick=async()=>{const t=$('me').value.trim();if(!t||busy)return;add('me',t);turns.push({role:'user',content:'Регистратор: '+t});$('me').value='';await ask()};
+ $('me').onkeydown=e=>{if(e.key=='Enter')$('sendMe').click()};
+}
+init();
+
+// ---- обучение: пособия по должностям
+const GUIDES=__GUIDES__;
+let LDB=null,LUID=null,LOWN=false,LOWNREAL=false,LDONE={},LSUB=null;
+function lMe(){const I=window.__IMM||{};return I.me||null}
+function lFill(){const s=$('lPick');s.textContent='';const me=lMe();
+ const list=LOWN?GUIDES:GUIDES.filter(g=>g.key===me);
+ (list.length?list:GUIDES).forEach(g=>{const o=document.createElement('option');o.value=g.key;o.textContent=g.full+' — '+g.role;s.appendChild(o)});
+ if(me&&list.some(g=>g.key===me))s.value=me;
+ $('lPickRow').hidden=!LOWN&&list.length===1;lRender()}
+function lKey(g,i,j){return g.key+'|'+i+'|'+j}
+async function lSave(){if(!LDB||!LUID)return;const me=lMe();let total=0,count=0;GUIDES.forEach(g=>{if(!LOWN&&g.key!==me)return;g.days.forEach((d,i)=>d.tasks.forEach((t,j)=>{total++;if(LDONE[lKey(g,i,j)])count++}))});
+ try{await LDB.doc('training/'+LUID).set({name:me||'Владелец',done:LDONE,count,total,updated:Date.now()})}catch(e){}}
+function lRender(){const g=GUIDES.find(x=>x.key===$('lPick').value)||GUIDES[0];const box=$('lBody');box.textContent='';
+ const head=mk('div','card lhead');head.appendChild(mk('h2',null,g.full));
+ head.appendChild(mk('div','meta',g.role+' · '+g.room+' · подчиняется: '+g.boss+' · пн–сб 8:00–17:00, обед 12:00–13:00'));
+ head.appendChild(mk('div',null,g.purpose));
+ const all=[];g.days.forEach((d,i)=>d.tasks.forEach((t,j)=>all.push(lKey(g,i,j))));const dn=all.filter(k=>LDONE[k]).length;
+ const pr=mk('div','meta','Пройдено: '+dn+' из '+all.length);head.appendChild(pr);const pb=mk('div','pbar');const pi=mk('i');pi.style.width=(all.length?dn/all.length*100:0)+'%';pb.appendChild(pi);head.appendChild(pb);
+ if(g.vacancy)head.appendChild(mk('div','meta','Это пособие для нового сотрудника на вакансию. Выдайте его в первый день работы.'));
+ box.appendChild(head);
+ const du=mk('div','card');du.appendChild(mk('h2',null,'Обязанности'));const ul=mk('ul','plain');g.duties.forEach(x=>ul.appendChild(mk('li',null,x)));du.appendChild(ul);
+ du.appendChild(mk('div','sub','Черновик: окончательно утверждает руководитель.'));box.appendChild(du);
+ const dc=mk('div','card');dc.appendChild(mk('h2',null,'План обучения на 5 дней'));
+ g.days.forEach((d,i)=>{const w=mk('div','day');const h=mk('h3');h.appendChild(document.createTextNode('День '+(i+1)+'. '+d.t));const c=d.tasks.filter((t,j)=>LDONE[lKey(g,i,j)]).length;h.appendChild(mk('span',null,c+' / '+d.tasks.length));w.appendChild(h);
+  d.tasks.forEach((t,j)=>{const k=lKey(g,i,j);const lab=mk('label','tk');const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!LDONE[k];
+   const mine=LOWN||g.key===lMe();cb.disabled=!mine||!LDB;cb.onchange=()=>{LDONE[k]=cb.checked;lRender();lSave()};lab.appendChild(cb);lab.appendChild(mk('span',null,t));w.appendChild(lab)});dc.appendChild(w)});
+ if(!LDB)dc.appendChild(mk('div','sub','Отметки сохраняются, когда вы вошли в приложение (Claude или сервер Immunolab).'));
+ box.appendChild(dc);
+ const sf=mk('div','card');sf.appendChild(mk('h2',null,'Безопасность и правила'));const su=mk('ul','plain');g.safety.forEach(x=>su.appendChild(mk('li',null,x)));sf.appendChild(su);box.appendChild(sf);
+ if(g.docs.length){const dd=mk('div','card');dd.appendChild(mk('h2',null,'Документы и журналы, за которые вы отвечаете'));const du2=mk('ul','plain');g.docs.forEach(x=>du2.appendChild(mk('li',null,x)));dd.appendChild(du2);box.appendChild(dd)}
+ const qz=mk('div','card');qz.appendChild(mk('h2',null,'Проверьте себя'));g.quiz.forEach(q=>{const it=mk('div','qa');it.appendChild(mk('div',null,q.q));const b=mk('button',null,'Показать ответ');const a=mk('div','ans',q.a);a.hidden=true;b.onclick=()=>{a.hidden=!a.hidden;b.textContent=a.hidden?'Показать ответ':'Скрыть ответ'};it.appendChild(b);it.appendChild(a);qz.appendChild(it)});box.appendChild(qz)}
+$('lPick').onchange=lRender;
+async function lInit(){try{if(window.claude&&claude.use){LDB=await claude.use('db');const u=await claude.use('user');if(u){try{LUID=await u.id()}catch(e){}try{LOWN=await u.isOwner()}catch(e){}}}}catch(e){}
+ LOWNREAL=LOWN;if(window.__IMM&&window.__IMM.preview)LOWN=false;
+ lFill();
+ if(LDB&&LUID)LDB.doc('training/'+LUID).onSnapshot(sn=>{LDONE=sn.exists?(sn.data().done||{}):{};lRender()},()=>{});
+ if(LDB&&LOWNREAL){$('lAdmin').hidden=false;LDB.collection('training').onSnapshot(sn=>{const box=$('lProg');box.textContent='';const rows=sn.docs.map(d=>d.data()).filter(v=>v&&v.name);
+  if(!rows.length){box.textContent='Пока никто не начал обучение.';return}
+  rows.sort((a,b)=>(b.updated||0)-(a.updated||0)).forEach(v=>{const r=mk('div',null,v.name+': '+(v.count||0)+' из '+(v.total||0)+' · '+new Date(v.updated||0).toLocaleDateString('ru-RU'));box.appendChild(r)})},()=>{})}}
+lFill();lInit();
+window.addEventListener('imm-me',()=>{LOWN=(window.__IMM&&window.__IMM.preview)?false:LOWNREAL;lFill()});
+</script></body></html>

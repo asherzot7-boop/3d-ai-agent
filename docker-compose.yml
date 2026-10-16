@@ -1,0 +1,12 @@
+# Запуск на своём сервере:  cp .env.example .env  (заполнить)  →  docker compose up -d
+services:
+  immunolab:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8080:8080"
+    volumes:
+      - immunolab-data:/data
+volumes:
+  immunolab-data:

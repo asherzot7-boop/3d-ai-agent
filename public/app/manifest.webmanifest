@@ -1,0 +1,15 @@
+{
+  "name": "Immunolab — рабочее приложение",
+  "short_name": "Immunolab",
+  "description": "Рабочее приложение центра Immunolab: ИИ-офис, 3D-модель, дашборд, обучение, проблемы, сканер документов.",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef3f6",
+  "theme_color": "#0d7f74",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,242 @@
+<title>Immunolab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;700&display=swap">
+<!--EXT-->
+<style>
+/* Layout: sticky section bar on top; each section fills the rest of the screen; home = checklist (owner) or personal start page (staff) */
+:root{
+  --bg:#eef3f6; --surface:#ffffff; --ink:#132a3d; --muted:#5a6f80; --line:#d6e0e7;
+  --accent:#0d7f74; --on-accent:#ffffff; --accent-soft:#d9efec; --warn:#b86b12; --warn-soft:#f6e8d4; --done:#2c8a4b;
+  --display:"Unbounded","Golos Text",system-ui,sans-serif;
+  --body:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d1820; --surface:#14232e; --ink:#e3ecf2; --muted:#93a8b7; --line:#24394a;
+  --accent:#3cc2b2; --on-accent:#06201d; --accent-soft:#163b39; --warn:#e5a25a; --warn-soft:#3a2a16; --done:#5cc47c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1820; --surface:#14232e; --ink:#e3ecf2; --muted:#93a8b7; --line:#24394a;
+  --accent:#3cc2b2; --on-accent:#06201d; --accent-soft:#163b39; --warn:#e5a25a; --warn-soft:#3a2a16; --done:#5cc47c; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.app{height:100%;display:flex;flex-direction:column}
+.tabs{flex:none;display:flex;gap:4px;overflow-x:auto;background:var(--surface);border-bottom:1px solid var(--line);padding-block:8px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{font:inherit;font-size:14px;font-weight:500;white-space:nowrap;background:none;border:1px solid transparent;color:var(--muted);border-radius:8px;padding:7px 12px;cursor:pointer}
+.tab:hover{color:var(--ink);background:var(--bg)}
+.tab[aria-selected="true"]{background:var(--accent-soft);color:var(--ink);border-color:var(--accent)}
+.tab:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.views{flex:1;position:relative;min-height:0}
+.view{position:absolute;inset:0;overflow:auto;-webkit-overflow-scrolling:touch}
+.host{display:block;min-height:100%}
+.wrap{max-width:760px;margin:0 auto;padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:20px}
+header{display:grid;gap:8px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(22px,5vw,30px);line-height:1.15;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-weight:500;font-size:17px;margin:0;text-wrap:balance}
+p{margin:0}
+.lead{color:var(--muted);max-width:62ch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:12px;min-width:0}
+.progress .row{display:flex;justify-content:space-between;gap:12px;font-size:14px;font-variant-numeric:tabular-nums}
+.bar{height:8px;background:var(--line);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.mod-head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:10px}
+.mod-head > div{display:grid;gap:4px;min-width:0;flex:1 1 260px}
+.mod-head p{color:var(--muted);font-size:14px}
+.open{display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:var(--on-accent);border:0;cursor:pointer;font:inherit;font-weight:600;padding:9px 14px;border-radius:8px;font-size:14px;white-space:nowrap}
+.ghost{font:inherit;font-size:14px;background:none;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 12px;cursor:pointer}
+.who{font-size:12px;color:var(--muted)}
+.who b{color:var(--ink);font-weight:600}
+ul.steps{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.check{display:flex;gap:10px;align-items:flex-start;padding:7px 8px;border-radius:8px;cursor:pointer}
+.check:hover{background:var(--bg)}
+.check input{margin:3px 0 0;width:18px;height:18px;accent-color:var(--accent);flex:none}
+.check span{min-width:0}
+.check input:checked+span{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.count{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted);background:var(--bg);border-radius:999px;padding:2px 9px;align-self:center}
+.count.full{color:var(--done);background:var(--accent-soft)}
+.note{font-size:13px;color:var(--muted);border-left:3px solid var(--line);padding-left:10px}
+.tasks{background:var(--warn-soft)}
+.group{display:grid;gap:2px}
+.group h3{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--warn);margin:6px 0 2px;font-weight:600}
+select.big{font:inherit;width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.field{display:grid;gap:6px}
+.field label{font-size:13px;color:var(--muted)}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+footer{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;color:var(--muted);font-size:13px}
+.linkbtn{font:inherit;font-size:13px;background:none;border:0;color:var(--accent);cursor:pointer;padding:0;text-decoration:underline}
+.err{color:var(--warn);font-size:14px}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+[hidden]{display:none!important}
+</style>
+
+<div class="app">
+<nav class="tabs" id="tabs" role="tablist" aria-label="Bo‘limlar"></nav>
+<div class="views" id="views">
+<div class="view" id="v_home" role="tabpanel">
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Immunolab · Namangan</span>
+    <h1 id="hTitle">Immunolab</h1>
+    <p class="lead" id="hLead">Yuklanmoqda…</p>
+  </header>
+
+  <!-- staff: choose who you are -->
+  <section class="panel" id="whoBox" hidden aria-labelledby="whoT">
+    <h2 id="whoT">Siz kimsiz?</h2>
+    <p class="lead">Ismingizni tanlang. Ilova sizga faqat ishingizga tegishli bo‘limlarni ko‘rsatadi.</p>
+    <div class="field"><label for="whoSel">Xodim yoki yangi lavozim</label><select class="big" id="whoSel"></select></div>
+    <div class="btns"><button class="open" id="whoBtn" type="button">Davom etish</button></div>
+  </section>
+
+  <!-- staff: personal start -->
+  <section class="panel" id="meBox" hidden aria-labelledby="meT">
+    <h2 id="meT"></h2>
+    <p class="lead" id="meRole"></p>
+    <div class="btns" id="meBtns"></div>
+    <div class="group"><h3 id="dayH">Bugun ilovada</h3><ul class="steps" id="meDay"></ul></div>
+    <p class="note">Avval «Maktab» bo‘limida o‘z o‘quv qo‘llanmangizni o‘qing va har kuni bajarganingizni belgilang.</p>
+    <div><button class="linkbtn" id="notMe" type="button">Bu men emasman</button></div>
+  </section>
+
+  <!-- owner -->
+  <section id="ownerBox" hidden style="display:grid;gap:16px">
+    <div class="panel">
+      <div class="field"><label for="asSel">Xodim ko‘zi bilan ko‘rish</label><select class="big" id="asSel"></select></div>
+      <p class="note">Xodim tanlansa, tepada faqat unga ochiladigan bo‘limlar qoladi. Shu tarzda har bir xodim nimani ko‘rishini tekshirasiz.</p>
+    </div>
+    <div class="panel progress" aria-live="polite">
+      <div class="row"><span>Sinov holati</span><b id="pTxt">0 / 0</b></div>
+      <div class="bar"><i id="pBar"></i></div>
+    </div>
+    <div id="mods" style="display:grid;gap:16px"></div>
+    <section class="panel tasks" aria-labelledby="tTitle">
+      <h2 id="tTitle">Sizga tegishli ishlar</h2>
+      <div id="tasks"></div>
+    </section>
+    <footer>
+      <span>Sinov belgilari faqat shu brauzerda saqlanadi.</span>
+      <button class="ghost" id="reset" type="button">Belgilarni tozalash</button>
+    </footer>
+  </section>
+</div>
+</div>
+</div>
+</div>
+
+<!--TEMPLATES-->
+
+<script>
+const MODS={};
+/*MODULES*/
+</script>
+<script>
+const PEOPLE=/*PEOPLE*/;
+const TABS=[{f:'home',t:'Bosh sahifa'},{f:'agents',t:'ИИ-офис'},{f:'model3d',t:'3D model'},{f:'dashboard',t:'Dashboard'},{f:'school',t:'Maktab'},{f:'problems',t:'Muammolar'},{f:'scanner',t:'Skaner'}];
+const CHECK=[
+ {f:'agents',name:'ИИ-офис',what:'8 ta sun’iy intellekt xodimi: Ofis-menejer, Malohat, Hujjatchi, Trener, Marketolog, Moliyachi, Analitik va HR. Ish vaqtida rejalashtiruv o‘tkazib, kunlik vazifalarni taqsimlaydi.',who:'Hamma xodimlar (har biriga o‘z agentlari)',
+  note:'Claude ichida agentlar sizning obunangizda ishlaydi (birinchi marta «Разрешить» bosing). Immunolab serverida esa markazning API kaliti ishlatiladi.',
+  steps:['Ish vaqtida ИИ-офисни oching: Ofis-menejer o‘zi rejalashtiruv o‘tkazib, «Доска задач»ga vazifalar yozadimi?','Malohatdan «Сколько стоит Превенар-13?» deb so‘rang: narx to‘g‘rimi?','Marketologdan Instagram uchun post so‘rang','Moliyachidan «Как увеличить выручку вакцинации на 20%?» deb so‘rang','Javobdagi «В задачи» tugmasini bosing va vazifa doskada chiqdimi, tekshiring']},
+ {f:'model3d',name:'3D model: 1-qavat',what:'Xonalar, xodimlar, chiqishlar va mijoz yo‘li uch o‘lchamda.',who:'Hamma xodimlar',
+  steps:['Modelni barmoq bilan aylantiring va kattalashtiring','6 va 7-xonani bosing: «Вакцинация и процедуры» deb chiqadimi?','Pastdagi ro‘yxatdan xodimni bosing: vazifalari chiqadimi?','«▶ Клиент 1: анализ крови»: mijoz registratura → kassa → 18-xonaga boradimi?','«▶ Клиент 2: вакцинация»: mijoz 6–7-xonaga boradimi?']},
+ {f:'dashboard',name:'Dashboard',what:'Boshqaruv paneli: laboratoriya, klinika, vaksinatsiya, xodimlar, navbat, hujjatlar.',who:'Direktor va boshqaruvchi',
+  note:'Raqamlar hozircha namuna. Haqiqiy raqamlar Sirocco’dan Excel kelgandan keyin ulanadi.',
+  steps:['Har bir bo‘limni bir martadan oching','«Документы»: 3–4 ta hujjatni «Есть / Нет» deb belgilang','Ilovani yopib qayta oching: belgilar saqlanib qoldimi?']},
+ {f:'school',name:'Maktab',what:'Har bir xodim va vakansiya uchun 5 kunlik o‘quv qo‘llanma, tillar, to‘lov, tahlillar va trenajyor.',who:'Hamma xodimlar',
+  steps:['«Обучение»: ro‘yxatdan bir nechta xodimni tanlab, qo‘llanmasini o‘qing','Bir-ikki vazifani belgilang va ilovani qayta oching: saqlandimi?','Xatolarni yozib qo‘ying: vazifalar, xona, kimga bo‘ysunadi','«Анализы»: vaksina prayslisti (15 ta) ko‘rinadimi?','«Тренажёр»: suhbatni boshlang va 2–3 ta javob yozing']},
+ {f:'problems',name:'Muammolar formasi',what:'Xodim ishiga nima xalaqit berayotganini yozadi. Javoblarni faqat rahbar ko‘radi.',who:'Hamma xodimlar',
+  steps:['O‘zingizdan bitta sinov xabarini yuboring','Pastda «Ответы сотрудников»da xabar chiqdimi?','«Отметить решённым» va «Скачать CSV» tugmalarini bosing']},
+ {f:'scanner',name:'Hujjat skaneri',what:'Hujjat suratga olinadi, sun’iy intellekt o‘qiydi va kerakli papkaga joylaydi.',who:'Rahbariyat, registratura, laboratoriya, vaksinatsiya',
+  note:'Birinchi marta Claude ruxsat so‘raydi: «Разрешить» ni bosing.',
+  steps:['«Сфотографировать» tugmasini bosing: kamera yoki galereya ochiladimi?','Bitta haqiqiy shartnomani suratga oling','Sun’iy intellekt papka, sana, raqam va summani to‘g‘ri topdimi?','Saqlang va «Мои» bo‘limida hujjat chiqdimi, tekshiring']}
+];
+const TODO=[
+ ['Hozir',['Bosh sahifadagi sinov qadamlarini bajaring','«Xodim ko‘zi bilan ko‘rish» orqali 2–3 xodimni tekshiring','Sinovdan keyin ilovani «Поделиться» orqali xodimlarga oching']],
+ ['Ma’lumot kerak',['Laboratoriya tahlillari prayslisti (narx, tayyorgarlik, muddat)','Direktor xonasi, Bakiyev Johongir lavozimi, Munojot familiyasi','Nevrolog Yusupov qaysi kunlari ishlaydi?','25–27-xonalar (МСП) qayerda?','O‘quv qo‘llanmalari va vazifalarni tasdiqlash']],
+ ['Keyingi qadam',['Sirocco’dan bitta kunlik Excel hisobot','2-qavat rejasi yoki suratlari','Eski alohida sahifalarni o‘chirish haqida qaror']]
+];
+const $=id=>document.getElementById(id);
+const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+window.__IMM={me:null,owner:false,preview:false};
+
+// ---------- shadow-root modules
+function docFor(root){const body=root.querySelector('.mbody');
+ const over={getElementById:id=>root.getElementById(id),querySelector:s=>root.querySelector(s),querySelectorAll:s=>root.querySelectorAll(s),getElementsByClassName:c=>root.querySelectorAll('.'+c),body:body};
+ return new Proxy(document,{get(t,k){if(k in over)return over[k];const v=Reflect.get(t,k);return typeof v==='function'?v.bind(t):v}})}
+function themeSync(host){const th=document.documentElement.getAttribute('data-theme');host.classList.toggle('th-dark',th==='dark');host.classList.toggle('th-light',th==='light')}
+new MutationObserver(()=>document.querySelectorAll('.host').forEach(themeSync)).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+function linkGo(x){x=String(x||'');if(x.startsWith('#go-'))return go(x.slice(4));if(/^https:\/\//.test(x)){const a=document.createElement('a');a.href=x;a.target='_blank';a.rel='noopener';a.click()}}
+const ROOTS={};
+function mount(f){const v=el('div','view');v.id='v_'+f;v.setAttribute('role','tabpanel');const host=el('div','host');v.append(host);$('views').append(v);
+ const root=host.attachShadow({mode:'open'});root.append($('tpl_'+f).content.cloneNode(true));themeSync(host);ROOTS[f]=root;
+ root.addEventListener('click',e=>{const a=e.composedPath().find(n=>n&&n.tagName==='A'&&(n.getAttribute('href')||'').startsWith('#go-'));if(a){e.preventDefault();go(a.getAttribute('href').slice(4))}},true);
+ if(f==='scanner'&&__IMM.me&&!__IMM.owner)LS.set('scan_name',__IMM.me);
+ views().forEach(x=>x.hidden=x!==v);
+ try{MODS[f](docFor(root),linkGo)}catch(e){const m=el('p','err','Bo‘lim ochilmadi: '+e.message);root.prepend(m)}
+ if(f==='problems'&&__IMM.me){const s=root.getElementById('who');if(s){const o=[...s.options].find(o=>o.textContent.startsWith(__IMM.me));if(o)s.value=o.value}}
+ return v}
+const views=()=>[...document.querySelectorAll('#views > .view')];
+
+// ---------- tabs and access
+function allowed(){if(__IMM.owner&&!__IMM.preview)return TABS.map(t=>t.f);const p=PEOPLE.find(x=>x.key===__IMM.me);return p?p.access:['home']}
+function drawTabs(){const ok=allowed();const tb=$('tabs');tb.textContent='';
+ TABS.filter(t=>ok.includes(t.f)).forEach(t=>{const b=el('button','tab',t.t);b.type='button';b.id='t_'+t.f;b.setAttribute('role','tab');b.setAttribute('aria-selected','false');b.onclick=()=>go(t.f);tb.append(b)})}
+function go(f){if(!allowed().includes(f))f='home';
+ let v=$('v_'+f);if(!v)v=mount(f);
+ views().forEach(x=>x.hidden=x!==v);
+ document.querySelectorAll('#tabs .tab').forEach(b=>b.setAttribute('aria-selected',String(b.id==='t_'+f)));
+ const tb=$('t_'+f);if(tb&&tb.scrollIntoView)tb.scrollIntoView({block:'nearest',inline:'nearest'});
+ if(f==='model3d')setTimeout(()=>window.dispatchEvent(new Event('resize')),30);
+ LS.set('imm_tab',f)}
+window.__go=go;
+
+// ---------- home
+const KEY='immunolab_hub_v1';let S={};try{S=JSON.parse(LS.get(KEY,'{}'))||{}}catch(e){S={}}
+const save=()=>LS.set(KEY,JSON.stringify(S));
+function item(key,text){const li=el('li');const lab=el('label','check');const cb=document.createElement('input');cb.type='checkbox';cb.id=key;cb.checked=!!S[key];
+ cb.onchange=()=>{S[key]=cb.checked;save();upd()};lab.append(cb,el('span',null,text));li.append(lab);return li}
+CHECK.forEach(m=>{const s=el('section','panel');const h=el('div','mod-head');const d=el('div');d.append(el('h2',null,m.name),el('p',null,m.what));
+ const who=el('span','who');who.append('Kim ishlatadi: ',el('b',null,m.who));d.append(who);
+ const a=el('button','open','Ochish →');a.type='button';a.onclick=()=>go(m.f);const c=el('span','count');c.id='c_'+m.f;h.append(d,c,a);s.append(h);
+ if(m.note)s.append(el('p','note',m.note));const ul=el('ul','steps');m.steps.forEach((st,i)=>ul.append(item(m.f+'_'+i,st)));s.append(ul);$('mods').append(s)});
+TODO.forEach(([g,list],gi)=>{const box=el('div','group');box.append(el('h3',null,g));const ul=el('ul','steps');list.forEach((x,i)=>ul.append(item('t'+gi+'_'+i,x)));box.append(ul);$('tasks').append(box)});
+function upd(){let all=0,done=0;CHECK.forEach(m=>{const n=m.steps.length,k=m.steps.filter((_,i)=>S[m.f+'_'+i]).length;all+=n;done+=k;const c=$('c_'+m.f);c.textContent=k+' / '+n;c.classList.toggle('full',k===n)});
+ $('pTxt').textContent=done+' / '+all+' qadam';$('pBar').style.width=(all?done/all*100:0)+'%'}
+upd();
+let armed=null;$('reset').onclick=()=>{const rb=$('reset');if(!armed){rb.textContent='Yana bir marta bosing';armed=setTimeout(()=>{armed=null;rb.textContent='Belgilarni tozalash'},3000);return}
+ clearTimeout(armed);armed=null;S={};save();document.querySelectorAll('#ownerBox input[type=checkbox]').forEach(c=>c.checked=false);rb.textContent='Belgilarni tozalash';upd()};
+
+const optFill=(sel,first)=>{sel.textContent='';if(first){const o=el('option',null,first[1]);o.value=first[0];sel.append(o)}
+ PEOPLE.forEach(p=>{const o=el('option',null,p.vacancy?p.full:(p.full+' — '+p.role));o.value=p.key;sel.append(o)})};
+optFill($('whoSel'),['','— tanlang —']);optFill($('asSel'),['','Hammasi (ilova egasi sifatida)']);
+$('whoBtn').onclick=()=>{const v=$('whoSel').value;if(!v)return;LS.set('imm_me',v);setMe(v)};
+$('notMe').onclick=()=>{if(__IMM.bound&&window.__immLogout)return window.__immLogout();LS.del('imm_me');setMe(null)};
+$('asSel').onchange=()=>{const v=$('asSel').value;__IMM.preview=!!v;__IMM.me=v||null;refresh();window.dispatchEvent(new Event('imm-me'))};
+function setMe(v){__IMM.me=v;refresh();window.dispatchEvent(new Event('imm-me'))}
+const NAMES={agents:'ИИ-офис',model3d:'3D model',dashboard:'Dashboard',school:'Maktab (o‘quv qo‘llanma)',problems:'Muammolarim',scanner:'Hujjat skaneri'};
+function refresh(){drawTabs();
+ const owner=__IMM.owner;$('ownerBox').hidden=!owner;
+ if(owner){$('hTitle').textContent='Immunolab boshqaruv markazi';$('hLead').textContent='Hamma bo‘limlar bitta ilovada. Bo‘limni oching, qadamlarni bajaring va bajarganini belgilang.';}
+ const showMe=!owner&&!!__IMM.me, showWho=!owner&&!__IMM.me;
+ $('whoBox').hidden=!showWho;$('meBox').hidden=!showMe;
+ if(!owner){$('hTitle').textContent='Immunolab';$('hLead').textContent=showWho?'Xodimlar uchun ish ilovasi.':'Ishingiz uchun kerakli bo‘limlar.'}
+ if(showMe){const p=PEOPLE.find(x=>x.key===__IMM.me)||{};$('meT').textContent='Assalomu alaykum, '+(p.vacancy?'yangi xodim':(p.full||__IMM.me));$('meRole').textContent=p.role||'';
+  const md=$('meDay');md.textContent='';const dk='imm_day_'+new Date().toISOString().slice(0,10);let DS={};try{DS=JSON.parse(LS.get(dk,'{}'))||{}}catch(e){}
+  (p.appday||[]).forEach((x,i)=>{const li=el('li');const lab=el('label','check');const cb=document.createElement('input');cb.type='checkbox';cb.id='md_'+i;cb.checked=!!DS[i];cb.onchange=()=>{DS[i]=cb.checked;LS.set(dk,JSON.stringify(DS))};lab.append(cb,el('span',null,x));li.append(lab);md.append(li)});
+  const b=$('meBtns');b.textContent='';(p.access||[]).filter(f=>f!=='home').forEach(f=>{const x=el('button',f==='school'?'open':'ghost',NAMES[f]);x.type='button';x.onclick=()=>go(f);b.append(x)})}
+ const cur=document.querySelector('#tabs .tab[aria-selected=true]');const curF=cur?cur.id.slice(2):LS.get('imm_tab','home');
+ go(allowed().includes(curF)?curF:'home')}
+
+async function boot(){
+ let owner=false,bound=null;try{if(window.claude&&claude.use){const u=await claude.use('user');if(u){owner=!!(await u.isOwner());if(u.staffKey)bound=await u.staffKey()}}}catch(e){}
+ // on the Immunolab server a staff login is bound to one person; inside Claude the person picks their name
+ if(bound&&!owner){LS.set('imm_me',bound);__IMM.bound=true}
+ __IMM.me=LS.get('imm_me',null);
+ __IMM.owner=owner;
+ let start=LS.get('imm_tab','home');const h=(location.hash||'').slice(1);if(h)start=h;
+ drawTabs();refresh();go(allowed().includes(start)?start:'home');
+ window.dispatchEvent(new Event('imm-me'))}
+drawTabs();go('home');boot();
+</script>

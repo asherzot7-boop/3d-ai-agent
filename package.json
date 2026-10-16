@@ -1,0 +1,24 @@
+{
+  "name": "immunolab",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Immunolab (Namangan): public website, staff web app with AI office, and server",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "node scripts/build.js",
+    "start": "node server/index.js",
+    "dev": "node scripts/build.js && node server/index.js",
+    "pin": "node server/pin.js",
+    "test": "node scripts/build.js && node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1",
+    "three": "0.128.0"
+  }
+}

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><title>Какие у меня проблемы</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#f4f6f8;--fg:#1b2430;--card:#fff;--line:#d5dbe2;--mut:#5d6a79;--acc:#2f7be5;--ok:#2fa35b;--warn:#e5902f;--bad:#d6455d;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a22;--fg:#e6ebf1;--card:#1d2631;--line:#33404f;--mut:#9aa8b8}}
+:root[data-theme="dark"]{--bg:#141a22;--fg:#e6ebf1;--card:#1d2631;--line:#33404f;--mut:#9aa8b8}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.45}
+.wrap{max-width:720px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:4px 0}h2{font-size:17px;margin:0 0 10px}
+.sub{color:var(--mut);font-size:14px;margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+select,textarea,button,input{font:inherit;color:var(--fg)}
+select,textarea{width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px}
+textarea{min-height:96px;resize:vertical}
+button{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:10px 16px;cursor:pointer;font-weight:600}
+button.sec{background:var(--card);color:var(--fg);border:1px solid var(--line);font-weight:500;padding:6px 10px;font-size:13px}
+button:disabled{opacity:.5;cursor:default}
+#msg{margin-bottom:12px;padding:10px 12px;border-radius:10px;background:var(--card);border:1px solid var(--warn);display:none;font-size:14px}
+.ok{color:var(--ok)}.err{color:var(--bad)}
+.item{border-top:1px solid var(--line);padding:10px 0}.item:first-child{border-top:0}
+.meta{font-size:12px;color:var(--mut);display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.chip{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;color:#fff}
+.u0{background:var(--ok)}.u1{background:var(--warn)}.u2{background:var(--bad)}
+.txt{margin:4px 0;white-space:pre-wrap;word-break:break-word}
+.fix{font-size:13px;color:var(--mut);white-space:pre-wrap}
+.done{opacity:.55}
+.sum{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.sum div{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:13px}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.row select{width:auto;flex:1;min-width:130px}
+[hidden]{display:none!important}
+</style></head><body>
+<div class="wrap">
+ <h1>Какие у меня проблемы</h1>
+ <p class="sub">Форма для сотрудников Immunolab. Напишите, что мешает вам работать. Ваш ответ видит только руководитель, коллеги его не видят.</p>
+ <div id="msg"></div>
+
+ <div class="card" id="formBox">
+  <h2>Новое сообщение</h2>
+  <div id="proxyNote" class="sub" hidden>Вы руководитель: можете записать проблему за сотрудника, выбрав его в списке.</div>
+  <label for="who">Кто вы</label><select id="who"></select>
+  <label for="cat">О чём проблема</label><select id="cat"></select>
+  <label for="urg">Насколько срочно</label><select id="urg"></select>
+  <label for="txt">Опишите проблему</label><textarea id="txt" placeholder="Что случилось, как часто, чем мешает работе"></textarea>
+  <label for="fix">Что, по-вашему, нужно сделать (необязательно)</label><textarea id="fix" placeholder="Ваше предложение"></textarea>
+  <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button id="send">Отправить</button><span id="status" class="sub" style="margin:0"></span></div>
+ </div>
+
+ <div class="card" id="mine" hidden><h2>Мои сообщения</h2><div id="mineList"></div></div>
+
+ <div class="card" id="admin" hidden>
+  <h2>Ответы сотрудников</h2>
+  <div class="sum" id="sum"></div>
+  <div class="row"><select id="fc"></select><select id="fu"></select><select id="fs"><option value="all">Все</option><option value="open">Открытые</option><option value="done">Решённые</option></select><button class="sec" id="csv">Скачать CSV</button></div>
+  <div id="adminList"></div>
+ </div>
+</div>
+<script>
+const STAFF=[['Абдуллаев Акмал','Директор'],['Саидов Дилмурод','Управляющий лаборатории'],['Мансуров Авазбек','Врач-лаборант'],['Алишеров Юсуфбек','Лаборант ПЦР'],['Абдукаххорова Райхона','Медсестра-лаборант'],['Маликжонова Одина','Медсестра по забору крови'],['Каримова Гулчирой','Регистратор и кассир'],['Юсупов Абдулазиз','Невролог'],['Атабаева Жамила','Педиатр'],['Муножат','Процедурная'],['Тожимирзаева Комила','Медсестра по вакцине'],['Бакиев Дилмурод','Кассир по вакцине'],['Бакиев Жохонгир','Комната 12'],['Исматов Рустам','Вакцина и филиалы'],['Шомирзаева Манзура','Уборщица и повар'],['Собирова Нафиса','Уборщица и повар'],['Ахмедов Шерзод','Водитель'],['Тошбоев Улугбек','Выездной лаборант'],['Другое (нет в списке)','']];
+const CATS=['Оборудование и реактивы','Помещение и уборка','Компьютер и программа','График и нагрузка','Клиенты и очередь','Оплата и условия работы','Отношения в коллективе','Безопасность','Другое'];
+const URG=['Можно подождать','Важно','Срочно'];
+const $=id=>document.getElementById(id);
+function mk(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+function opt(sel,val,text){const o=document.createElement('option');o.value=val;o.textContent=text;sel.appendChild(o)}
+STAFF.forEach((s,i)=>opt($('who'),i,s[0]+(s[1]?' — '+s[1]:'')));
+CATS.forEach((c,i)=>opt($('cat'),i,c));
+URG.forEach((u,i)=>opt($('urg'),i,u));
+opt($('fc'),'all','Все категории');CATS.forEach((c,i)=>opt($('fc'),i,c));
+opt($('fu'),'all','Любая срочность');URG.forEach((u,i)=>opt($('fu'),i,u));
+$('urg').value=1;
+
+let db=null,user=null,uid=null,owner=false,rows=[];
+const fmt=t=>new Date(t).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+function note(t,cls){const m=$('msg');m.textContent=t;m.style.display=t?'block':'none';m.className=cls||''}
+
+async function init(){
+ if(!window.claude||!claude.use){note('Форма работает только при открытии страницы через claude.ai.');$('send').disabled=true;return}
+ try{db=await claude.use('db');user=await claude.use('user')}catch(e){}
+ if(!db){note('Форма недоступна: войдите в аккаунт claude.ai или попросите руководителя дать вам доступ.');$('send').disabled=true;return}
+ try{uid=user?await user.id():null;owner=user?await user.isOwner():false}catch(e){}
+ if(!uid&&!owner){note('Не удалось определить ваш аккаунт. Попросите руководителя дать вам доступ к этой странице.');$('send').disabled=true;return}
+ if(owner)$('proxyNote').hidden=false;
+ if(!owner){$('mine').hidden=false;db.doc('problems/'+uid).onSnapshot(s=>renderMine(s.exists?s.data():null),()=>{})}
+ let admin=owner;try{if(!admin&&user)admin=await user.canEdit()}catch(e){}
+ if(admin){$('admin').hidden=false;db.collection('problems').onSnapshot(snap=>{rows=[];snap.docs.forEach(d=>{const v=d.data()||{};(v.items||[]).forEach(it=>rows.push(Object.assign({docId:d.id,name:v.name||'',role:v.role||''},it)))});renderAdmin()},()=>{})}
+}
+
+function renderMine(v){const box=$('mineList');box.textContent='';const items=(v&&v.items)||[];
+ if(!items.length){box.appendChild(mk('div','sub','Пока ничего не отправлено.'));return}
+ items.slice().reverse().forEach(it=>{const d=mk('div','item'+(it.done?' done':''));const m=mk('div','meta');m.appendChild(mk('span','chip u'+it.urgency,URG[it.urgency]));m.appendChild(mk('span',null,CATS[it.cat]));m.appendChild(mk('span',null,fmt(it.ts)));if(it.done)m.appendChild(mk('span','ok','решено'));d.appendChild(m);d.appendChild(mk('div','txt',it.text));if(it.fix)d.appendChild(mk('div','fix','Предложение: '+it.fix));box.appendChild(d)})}
+
+$('send').onclick=async()=>{
+ const text=$('txt').value.trim();if(text.length<5){$('status').textContent='Опишите проблему подробнее.';$('status').className='sub err';return}
+ const who=+$('who').value,docId=owner?'p_'+who:uid;
+ const item={id:Date.now().toString(36),cat:+$('cat').value,urgency:+$('urg').value,text,fix:$('fix').value.trim(),ts:Date.now(),done:false};
+ $('send').disabled=true;$('status').className='sub';$('status').textContent='Отправляю…';
+ try{const ref=db.doc('problems/'+docId);const s=await ref.get();const old=s.exists?s.data():{};
+  const items=(old.items||[]).concat([item]);
+  await ref.set({name:STAFF[who][0],role:STAFF[who][1],items,updated:Date.now()});
+  $('txt').value='';$('fix').value='';$('status').textContent='Спасибо! Сообщение отправлено руководителю.';$('status').className='sub ok';
+ }catch(e){$('status').textContent='Не удалось отправить'+(e&&e.code?' ('+e.code+')':'')+'. Попробуйте ещё раз или попросите руководителя дать доступ.';$('status').className='sub err'}
+ $('send').disabled=false};
+
+function filtered(){const c=$('fc').value,u=$('fu').value,s=$('fs').value;
+ return rows.filter(r=>(c=='all'||r.cat==c)&&(u=='all'||r.urgency==u)&&(s=='all'||(s=='done')==!!r.done)).sort((a,b)=>(b.urgency-a.urgency)||(b.ts-a.ts))}
+function renderAdmin(){
+ const sum=$('sum');sum.textContent='';const open=rows.filter(r=>!r.done);
+ sum.appendChild(mk('div',null,'Всего: '+rows.length+' · открытых: '+open.length));
+ URG.forEach((u,i)=>sum.appendChild(mk('div',null,u+': '+open.filter(r=>r.urgency==i).length)));
+ const by={};open.forEach(r=>by[r.cat]=(by[r.cat]||0)+1);
+ Object.keys(by).sort((a,b)=>by[b]-by[a]).slice(0,4).forEach(k=>sum.appendChild(mk('div',null,CATS[k]+': '+by[k])));
+ const box=$('adminList');box.textContent='';const list=filtered();
+ if(!list.length){box.appendChild(mk('div','sub',rows.length?'Нет сообщений по выбранному фильтру.':'Пока никто ничего не отправил.'));return}
+ list.forEach(r=>{const d=mk('div','item'+(r.done?' done':''));const m=mk('div','meta');
+  m.appendChild(mk('b',null,r.name));if(r.role)m.appendChild(mk('span',null,r.role));
+  m.appendChild(mk('span','chip u'+r.urgency,URG[r.urgency]));m.appendChild(mk('span',null,CATS[r.cat]));m.appendChild(mk('span',null,fmt(r.ts)));
+  d.appendChild(m);d.appendChild(mk('div','txt',r.text));if(r.fix)d.appendChild(mk('div','fix','Предложение: '+r.fix));
+  if(owner){const b=mk('button','sec',r.done?'Вернуть в открытые':'Отметить решённым');b.onclick=()=>toggle(r,b);d.appendChild(b)}
+  box.appendChild(d)})}
+async function toggle(r,b){b.disabled=true;try{const ref=db.doc('problems/'+r.docId);const s=await ref.get();const v=s.data();
+ await ref.set(Object.assign({},v,{items:(v.items||[]).map(it=>it.id==r.id?Object.assign({},it,{done:!it.done}):it)}))}catch(e){b.disabled=false}}
+['fc','fu','fs'].forEach(id=>$(id).onchange=renderAdmin);
+$('csv').onclick=async()=>{const esc=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+ const head=['Сотрудник','Должность','Категория','Срочность','Проблема','Что сделать','Дата','Статус'];
+ const body=filtered().map(r=>[r.name,r.role,CATS[r.cat],URG[r.urgency],r.text,r.fix,new Date(r.ts).toLocaleString('ru-RU'),r.done?'решено':'открыто'].map(esc).join(','));
+ try{const dl=await claude.use('downloads');if(dl)await dl.save({filename:'problems.csv',data:'\ufeff'+[head.map(esc).join(',')].concat(body).join('\n')})}catch(e){}};
+init();
+</script></body></html>

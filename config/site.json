@@ -1,0 +1,16 @@
+{
+  "_comment": "Контакты сайта. Заполните пустые поля и пересоберите: npm run build. Пустое поле на сайте показывается как «уточняется».",
+  "legalName": "Immunolab",
+  "address": "",
+  "phone": "",
+  "telegram": "",
+  "instagram": "",
+  "mapUrl": "",
+  "hours": "",
+  "hours_ru": "пн–сб 8:00–17:00",
+  "hours_uz": "du–sha 8:00–17:00",
+  "hours_en": "Mon–Sat 8:00–17:00",
+  "schedule": { "days": [1, 2, 3, 4, 5, 6], "open": 8, "close": 17, "tz": 5 },
+  "pricesApproved": "02.09.2025",
+  "api": "api"
+}
