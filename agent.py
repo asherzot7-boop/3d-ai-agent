@@ -92,8 +92,12 @@ TOOLS = [calculator, current_time, save_note, read_notes]
 
 # ---------- Agent sikli ----------
 
-def ask(client: anthropic.Anthropic, messages: list) -> None:
-    """Bitta savolga javob beradi; tool chaqiruvlarini SDK o'zi bajaradi."""
+def ask(client: anthropic.Anthropic, messages: list, on_tool=None) -> str:
+    """Bitta savolga javob beradi; tool chaqiruvlarini SDK o'zi bajaradi.
+
+    `messages` ro'yxatiga suhbat tarixi qo'shib boriladi. Agentning yakuniy
+    matnli javobini qaytaradi. `on_tool` — vosita ishlatilganda chaqiriladi.
+    """
     runner = client.beta.messages.tool_runner(
         model=MODEL,
         max_tokens=16000,
@@ -105,20 +109,33 @@ def ask(client: anthropic.Anthropic, messages: list) -> None:
         tools=TOOLS,
         messages=messages,
     )
+    replies = []
     for message in runner:
         # Suhbat tarixini saqlab boramiz (keyingi savollar uchun)
         messages.append({"role": "assistant", "content": message.content})
         tool_response = runner.generate_tool_call_response()
         if tool_response is not None:
-            names = [b.name for b in message.content if b.type == "tool_use"]
-            print(f"  🔧 vosita: {', '.join(names)}")
+            if on_tool:
+                on_tool([b.name for b in message.content if b.type == "tool_use"])
             messages.append(tool_response)
         if message.stop_reason == "refusal":
-            print("Agent: (so'rov rad etildi)")
+            replies.append("(so'rov rad etildi)")
             continue
-        for block in message.content:
-            if block.type == "text" and block.text.strip():
-                print(f"Agent: {block.text}")
+        replies += [b.text for b in message.content if b.type == "text" and b.text.strip()]
+    return "\n\n".join(replies)
+
+
+def error_text(e: anthropic.APIError) -> str:
+    """API xatosini foydalanuvchiga tushunarli matnga aylantiradi."""
+    if isinstance(e, anthropic.AuthenticationError):
+        return "Xato: ANTHROPIC_API_KEY noto'g'ri yoki o'rnatilmagan."
+    if isinstance(e, anthropic.RateLimitError):
+        return "Xato: limitga yetildi, birozdan keyin urinib ko'ring."
+    if isinstance(e, anthropic.APIConnectionError):
+        return "Xato: internetga ulanib bo'lmadi."
+    if isinstance(e, anthropic.APIStatusError):
+        return f"API xatosi ({e.status_code}): {e.message}"
+    return f"Xato: {e}"
 
 
 def main() -> None:
@@ -137,18 +154,11 @@ def main() -> None:
         start = len(messages)
         messages.append({"role": "user", "content": user_input})
         try:
-            ask(client, messages)
-        except anthropic.AuthenticationError:
-            print("Xato: ANTHROPIC_API_KEY noto'g'ri yoki o'rnatilmagan.")
-            del messages[start:]
-        except anthropic.RateLimitError:
-            print("Xato: limitga yetildi, birozdan keyin urinib ko'ring.")
-            del messages[start:]
-        except anthropic.APIConnectionError:
-            print("Xato: internetga ulanib bo'lmadi.")
-            del messages[start:]
-        except anthropic.APIStatusError as e:
-            print(f"API xatosi ({e.status_code}): {e.message}")
+            reply = ask(client, messages,
+                        on_tool=lambda names: print(f"  🔧 vosita: {', '.join(names)}"))
+            print(f"Agent: {reply}")
+        except anthropic.APIError as e:
+            print(error_text(e))
             del messages[start:]
         print()
     print("Xayr!")
