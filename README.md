@@ -38,31 +38,34 @@ Agent: 245 × 17 = 4165. Natijani eslatmaga saqladim.
 Xuddi shu agent Telegramda ham ishlaydi (`telegram_bot.py`). Har bir chat o'z
 suhbat tarixiga ega.
 
-1. Telegramda **@BotFather** ga yozing → `/newbot` (yoki mavjud botingiz uchun
-   `/token`) → bot tokenini nusxalang.
-2. Ishga tushiring:
+Bot sizning kompyuteringizda ishlaydi — kompyuter yoqiq va skript ochiq turganda
+bot javob beradi.
 
-```bash
-pip install -r requirements.txt
-export ANTHROPIC_API_KEY="sk-ant-..."
-export TELEGRAM_BOT_TOKEN="123456:ABC..."
-python telegram_bot.py
+1. [Python](https://www.python.org/downloads/) o'rnating (Windows'da o'rnatishda
+   **"Add python.exe to PATH"** belgisini qo'ying).
+2. Telegramda **@BotFather** → `/token` → botingiz tokenini nusxalang.
+3. **`start_bot.bat`** faylini ikki marta bosing (Mac/Linux: `./start_bot.sh`).
+   Birinchi marta u `.env` faylini yaratib, Notepad'da ochadi.
+4. `.env` ga kalitlarni yozing va saqlang:
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+TELEGRAM_BOT_TOKEN=123456:ABC...
+TELEGRAM_ALLOWED_USERS=
 ```
 
-3. Botga `/start` yozing — u sizning Telegram ID raqamingizni ko'rsatadi.
-4. **Muhim:** botni faqat o'zingiz ishlatishingiz uchun ID ni qo'shing va qayta
-   ishga tushiring (aks holda istalgan odam yozib, API hisobingizni sarflashi mumkin):
+5. `start_bot.bat` ni yana ishga tushiring. Botga `/start` yozing — u Telegram ID
+   raqamingizni ko'rsatadi.
+6. **Muhim:** shu ID ni `.env` dagi `TELEGRAM_ALLOWED_USERS=` ga yozing va botni
+   qayta ishga tushiring — aks holda istalgan odam botga yozib, API hisobingizni
+   sarflashi mumkin.
 
-```bash
-export TELEGRAM_ALLOWED_USERS="123456789"   # bir nechta: "111,222"
-```
+Botni to'xtatish: oynani yoping yoki `Ctrl+C` bosing.
 
 Buyruqlar: `/start` — salomlashish, `/reset` — suhbatni tozalash.
 
+> `.env` faylida maxfiy kalitlar bor — uni hech kimga yubormang (u git'ga qo'shilmaydi).
 > Eslatmalar (`notes.txt`) hamma foydalanuvchilar uchun umumiy.
-
-Bot doimiy ishlashi uchun uni server yoki VPS'da ishga tushiring
-(masalan, `nohup python telegram_bot.py &` yoki systemd xizmati).
 
 ### Yangi vosita qo'shish
 

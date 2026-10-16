@@ -8,11 +8,28 @@ Ishga tushirish:
 
 import ast
 import operator
+import os
 from datetime import datetime
 from pathlib import Path
 
 import anthropic
 from anthropic import beta_tool
+
+
+
+def load_env() -> None:
+    """Papkadagi .env faylidan kalitlarni o'qiydi (KEY=qiymat qatorlari)."""
+    env_file = Path(__file__).with_name(".env")
+    if not env_file.exists():
+        return
+    for line in env_file.read_text(encoding="utf-8-sig").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            key, value = line.split("=", 1)
+            os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+load_env()
 
 MODEL = "claude-opus-5-5"
 NOTES_FILE = Path(__file__).with_name("notes.txt")
