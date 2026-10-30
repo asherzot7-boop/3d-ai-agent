@@ -1,0 +1,16 @@
+{
+  "name": "ai-video-office",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Claude agentlari boshqaradigan avtomatik video ishlab chiqarish pipeline'i",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "validate": "node tools/validate.mjs",
+    "voice": "node tools/gen-voice.mjs",
+    "clips": "node tools/gen-clip.mjs",
+    "assemble": "node tools/assemble.mjs",
+    "pipeline": "node pipeline.mjs",
+    "demo": "node pipeline.mjs projects/namuna-qahvaxona --provider mock"
+  }
+}

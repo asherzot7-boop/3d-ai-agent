@@ -1,0 +1,6 @@
+.env
+node_modules/
+projects/*/audio/
+projects/*/clips/
+projects/*/build/
+projects/*/*.mp4

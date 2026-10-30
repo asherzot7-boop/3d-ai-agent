@@ -1,0 +1,34 @@
+{
+  "title": "Tong qahvaxonasi — reklama",
+  "aspect": "9:16",
+  "language": "uz",
+  "subtitles": true,
+  "music": "music.mp3",
+  "music_volume": 0.15,
+  "scenes": [
+    {
+      "narration": "Har bir yaxshi kun bitta finjon qahvadan boshlanadi.",
+      "visual_prompt": "Close-up of fresh espresso pouring into a white ceramic cup, warm morning sunlight through a cafe window, steam rising, cinematic, shallow depth of field",
+      "motion_prompt": "slow push-in on the cup, steam drifting upward",
+      "duration": 5
+    },
+    {
+      "narration": "Tong qahvaxonasida donlar har kuni yangi qovuriladi.",
+      "visual_prompt": "Barista's hands scooping freshly roasted coffee beans in a cozy modern cafe, wooden counter, warm amber light, cinematic",
+      "motion_prompt": "beans falling from the scoop in slow motion",
+      "duration": 5
+    },
+    {
+      "narration": "Do'stlar bilan suhbat, sokin musiqa va uydagidek qulaylik.",
+      "visual_prompt": "Young friends laughing at a table in a bright cozy cafe, plants and wooden furniture, Central Asian city vibe, soft natural light, cinematic",
+      "motion_prompt": "gentle sideways camera slide across the table",
+      "duration": 5
+    },
+    {
+      "narration": "Bugun keling — birinchi qahva bizdan!",
+      "visual_prompt": "Cafe storefront at sunrise with a warm glowing sign reading TONG, empty street, golden hour, cinematic wide shot",
+      "motion_prompt": "slow pull-back revealing the storefront",
+      "duration": 5
+    }
+  ]
+}
