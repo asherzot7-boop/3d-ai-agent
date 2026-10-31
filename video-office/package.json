@@ -11,6 +11,7 @@
     "clips": "node tools/gen-clip.mjs",
     "assemble": "node tools/assemble.mjs",
     "pipeline": "node pipeline.mjs",
-    "demo": "node pipeline.mjs projects/namuna-qahvaxona --provider mock"
+    "demo": "node pipeline.mjs projects/namuna-qahvaxona",
+    "demo:mock": "node pipeline.mjs projects/namuna-qahvaxona --provider mock"
   }
 }

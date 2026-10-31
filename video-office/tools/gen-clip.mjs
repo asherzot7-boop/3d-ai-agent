@@ -1,7 +1,12 @@
 // visual_prompt per scene → clips/scene-NN.mp4
 // Runway: text → keyframe image (gen4_image) → image-to-video (gen4_turbo).
-// A scene can skip the image step by giving its own "image" (local path or https URL).
-// Usage: node tools/gen-clip.mjs <project> [--provider runway|mock] [--scene N] [--force]
+// Providers:
+//   free   — Flux keyframe (Pollinations, no key) + Ken Burns camera motion. Costs nothing.
+//   runway — text → keyframe (gen4_image) → image-to-video (gen4_turbo). Paid.
+//   mock   — placeholder cards, offline.
+// A scene can skip the image step by giving its own "image" (local path; runway also takes https URL).
+// A clip already present in clips/ (e.g. downloaded from Kling/Hailuo free credits) is kept as is.
+// Usage: node tools/gen-clip.mjs <project> [--provider free|runway|mock] [--scene N] [--force]
 import fs from 'node:fs';
 import path from 'node:path';
 import {
@@ -56,6 +61,70 @@ async function runwayClip(scene, ratio, seconds, dir, dest) {
   await download(url, dest);
 }
 
+// Free: Flux keyframe from Pollinations (no key) → cinematic Ken Burns motion with ffmpeg.
+async function pollinationsImage(scene, i, ratio, dest) {
+  const prompt = [scene.visual_prompt, scene.style, 'highly detailed, sharp focus, professional photography']
+    .filter(Boolean).join(', ');
+  const params = new URLSearchParams({
+    width: ratio.w, height: ratio.h, model: process.env.POLLINATIONS_MODEL || 'flux',
+    nologo: 'true', enhance: 'true', seed: String(scene.seed ?? 1000 + i),
+  });
+  const headers = process.env.POLLINATIONS_TOKEN ? { Authorization: `Bearer ${process.env.POLLINATIONS_TOKEN}` } : {};
+  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt.slice(0, 1500))}?${params}`;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const res = await fetch(url, { headers, signal: AbortSignal.timeout(180_000) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      fs.writeFileSync(dest, Buffer.from(await res.arrayBuffer()));
+      return;
+    } catch (e) {
+      if (attempt >= 4) throw new Error(`Pollinations rasm bermadi: ${e.message}`);
+      log(`  rasm qayta so'ralmoqda (${attempt}/3): ${e.message}`);
+      await sleep(15_000 * attempt); // free tier is rate-limited
+    }
+  }
+}
+
+// Picks a camera move from motion_prompt keywords, otherwise cycles through moves.
+const MOVES = ['in', 'right', 'out', 'left', 'up'];
+function pickMove(scene, i) {
+  const m = (scene.motion_prompt || '').toLowerCase();
+  if (/pull[- ]?back|zoom[- ]?out|reveal/.test(m)) return 'out';
+  if (/push[- ]?in|zoom[- ]?in|close/.test(m)) return 'in';
+  if (/left/.test(m)) return 'left';
+  if (/right|slide|pan/.test(m)) return 'right';
+  if (/up|rise|tilt/.test(m)) return 'up';
+  return MOVES[i % MOVES.length];
+}
+
+export async function kenBurns(image, move, ratio, seconds, dest) {
+  const fps = 30, frames = Math.round(seconds * fps), { w, h } = ratio;
+  const p = `(on/${frames})`; // 0 → 1 progress
+  const ease = `(0.5-0.5*cos(PI*${p}))`; // smooth start and stop
+  const z = { in: `1+0.18*${ease}`, out: `1.18-0.18*${ease}` }[move] || '1.12';
+  const cx = 'iw/2-(iw/zoom/2)', cy = 'ih/2-(ih/zoom/2)';
+  const x = { left: `(iw-iw/zoom)*(1-${ease})`, right: `(iw-iw/zoom)*${ease}` }[move] || cx;
+  const y = move === 'up' ? `(ih-ih/zoom)*(1-${ease})` : cy;
+  // Upscale 3x before zoompan so the sub-pixel motion stays smooth instead of jittering.
+  await ffmpeg([
+    '-loop', '1', '-i', image,
+    '-vf', `scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h},scale=${w * 3}:${h * 3}:flags=lanczos,` +
+      `zoompan=z='${z}':x='${x}':y='${y}':d=${frames}:s=${w}x${h}:fps=${fps},` +
+      `eq=contrast=1.04:saturation=1.08,vignette=PI/6,format=yuv420p`,
+    '-frames:v', String(frames), '-c:v', 'libx264', '-preset', 'slow', '-crf', '17', dest,
+  ]);
+}
+
+async function freeClip(scene, i, ratio, seconds, dir, dest) {
+  let image = scene.image && path.resolve(dir, scene.image);
+  if (!image) {
+    fs.mkdirSync(path.join(dir, 'images'), { recursive: true });
+    image = path.join(dir, 'images', `${sceneName(i)}.jpg`);
+    if (!fs.existsSync(image)) await pollinationsImage(scene, i, ratio, image);
+  }
+  await kenBurns(image, pickMove(scene, i), ratio, seconds, dest);
+}
+
 // Offline stand-in: coloured card with the scene's prompt, so the whole pipeline can be tested free.
 const COLORS = ['0x1f3a5f', '0x5f1f3a', '0x1f5f3a', '0x5f4a1f', '0x3a1f5f', '0x1f5a5f'];
 async function mockClip(scene, i, ratio, seconds, dest) {
@@ -72,7 +141,7 @@ async function mockClip(scene, i, ratio, seconds, dest) {
   fs.rmSync(txt);
 }
 
-export async function genClips(dir, { provider = 'runway', scene, force } = {}) {
+export async function genClips(dir, { provider = 'free', scene, force } = {}) {
   const sb = loadStoryboard(dir);
   const ratio = ASPECTS[sb.aspect];
   fs.mkdirSync(path.join(dir, 'clips'), { recursive: true });
@@ -83,9 +152,10 @@ export async function genClips(dir, { provider = 'runway', scene, force } = {}) 
     // Clip must cover the narration; Runway only renders 5s or 10s clips.
     const voice = path.join(dir, 'audio', `${sceneName(i)}.mp3`);
     const need = Math.max(s.duration || 5, fs.existsSync(voice) ? (await duration(voice)) + 0.5 : 0);
-    const seconds = need > 5 ? 10 : 5;
+    const seconds = provider === 'free' ? Math.ceil(need) : need > 5 ? 10 : 5;
     log(`${sceneName(i)}: klip yaratilmoqda (${provider}, ${seconds}s)`);
     if (provider === 'mock') await mockClip(s, i, ratio, seconds, dest);
+    else if (provider === 'free') await freeClip(s, i, ratio, seconds, dir, dest);
     else await runwayClip(s, ratio, seconds, dir, dest);
   }
 }

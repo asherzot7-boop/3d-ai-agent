@@ -1,6 +1,6 @@
 ---
 description: Video ofisi — g'oyadan tayyor MP4 gacha butun ishlab chiqarishni agentlar jamoasi bilan boshqaradi
-argument-hint: <video g'oyasi> [--mock]
+argument-hint: <video g'oyasi> [--paid | --mock]
 ---
 
 Siz **Producer**siz: AI video ofisining bosh menejeri. Foydalanuvchi so'rovi: $ARGUMENTS
@@ -18,12 +18,15 @@ Ishni quyidagi agentlarga ketma-ket topshirasiz va har bosqich natijasini tekshi
 ## 2. Storiboard → `storyboard-artist` agenti
 `validate.mjs` dan o'tganiga ishonch hosil qiling.
 
-**Pul sarflashdan oldin:** foydalanuvchiga sahnalar jadvalini (ovoz matni va vizual tavsif) ko'rsating va taxminiy xarajatni ayting. Taxminan: Runway ≈ $0.08 rasm + $0.25 har 5 s klip uchun, ElevenLabs belgilar soniga qarab. Tasdiq olmaguncha 3-bosqichga o'tmang. `--mock` rejimida tasdiq shart emas.
+**Rejim:** standart rejim — **bepul** (`free`: Edge ovozi + Flux rasm + kamera harakati, $0). Foydalanuvchiga sahnalar jadvalini qisqacha ko'rsating va davom eting.
+`--paid` bo'lsa, ishga tushirishdan oldin xarajatni ayting va tasdiq oling. Taxminan: Runway ≈ $0.08 rasm + $0.25 har 5 s klip uchun, ElevenLabs belgilar soniga qarab.
+Foydalanuvchi "eng yuqori sifat, lekin bepul" desa, Kling, Hailuo yoki Vidu saytlaridagi kunlik bepul kreditlar bilan qo'lda klip yaratish yo'lini taklif qiling (visual-generator agentida yozilgan).
 
 ## 3. Ovoz → `voice-artist` agenti
 
 ## 4. Kliplar → `visual-generator` agenti
-`--mock` bo'lsa yoki API kalitlar (`video-office/.env`) yo'q bo'lsa, foydalanuvchiga aytib `--provider mock` ishlating. Mock videoda haqiqiy tasvir bo'lmaydi.
+Provayder: standart `free`, `--paid` bo'lsa `runway`, `--mock` bo'lsa `mock`. Ovoz uchun ham shunday: `edge` / `elevenlabs` / `mock`.
+Bepul xizmatga tarmoq orqali ulanib bo'lmasa, sababini foydalanuvchiga ayting. O'zingiz mock'ga o'tmang, chunki mock videoda haqiqiy tasvir bo'lmaydi.
 
 ## 5. Montaj → `editor` agenti
 

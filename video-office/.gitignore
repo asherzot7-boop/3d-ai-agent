@@ -2,5 +2,6 @@
 node_modules/
 projects/*/audio/
 projects/*/clips/
+projects/*/images/
 projects/*/build/
 projects/*/*.mp4

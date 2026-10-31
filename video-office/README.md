@@ -1,33 +1,43 @@
 # 🎬 AI Video Ofisi
 
-Claude agentlaridan iborat "virtual studiya". Siz g'oya yozasiz, agentlar jamoasi esa tayyor MP4 video chiqarib beradi.
+Claude agentlaridan iborat "virtual studiya". Siz g'oya yozasiz, agentlar jamoasi esa tayyor MP4 video chiqarib beradi. **Standart rejim butunlay bepul.**
 
 ```
 Siz: /make-video "Qahvaxona uchun 25 soniyalik Reels"
         │
-   🎩 Producer (/make-video)  ── brif, nazorat, tasdiq so'rash
+   🎩 Producer (/make-video)  ── brif, nazorat
         │
    ✍️  scriptwriter       → script.md
-   🎨 storyboard-artist  → storyboard.json   ← xarajatdan oldin siz tasdiqlaysiz
-   🎙️  voice-artist       → audio/*.mp3       (ElevenLabs)
-   🎥 visual-generator   → clips/*.mp4       (Runway Gen-4)
+   🎨 storyboard-artist  → storyboard.json
+   🎙️  voice-artist       → audio/*.mp3       (Edge neyron ovozi, o'zbekcha)
+   🎥 visual-generator   → clips/*.mp4       (Flux rasm + kinematografik kamera harakati)
    ✂️  editor             → final.mp4         (ffmpeg: montaj + subtitr + musiqa)
    🔍 qa-reviewer        → qa-report.md      → kerak bo'lsa sahnani qayta ishlashga qaytaradi
 ```
 
-## O'rnatish
+## Uch xil sifat darajasi
 
-1. Kerakli dasturlar: **Node.js 18+**, **ffmpeg** va **Claude Code**.
-2. API kalitlarni sozlang:
-   ```bash
-   cd video-office
-   cp .env.example .env
-   # .env faylini oching va RUNWAY_API_KEY hamda ELEVENLABS_API_KEY ni kiriting
-   ```
-   - Runway: https://dev.runwayml.com → API Keys (kredit sotib olinadi)
-   - ElevenLabs: https://elevenlabs.io → Profile → API Keys
+| Daraja | Ovoz | Video | Narx |
+|---|---|---|---|
+| **1. Bepul, avtomatik** (standart) | Microsoft Edge neyron ovozi — haqiqiy o'zbekcha `Madina` / `Sardor` | Flux AI rasm + silliq kamera harakati (Ken Burns), 1080p | **$0** |
+| **2. Bepul, premium** (yarim qo'lda) | Edge | Kling / Hailuo / Vidu saytlaridagi **kunlik bepul kreditlar**da yaratilgan haqiqiy AI video | **$0** |
+| **3. Pullik, to'liq avtomatik** | ElevenLabs | Runway Gen-4 | ~$1.5–2 / video |
 
-   Claude Code bulutda (claude.ai/code) ishlatilsa, kalitlarni `.env` o'rniga muhit sozlamalariga (environment variables) qo'shing.
+**Ochiq gap:** haqiqiy harakatlanuvchi AI video (odam yuradi, suv oqadi) yaratish qimmat GPU talab qiladi. Shuning uchun bunday videoni bepul va to'liq avtomatik beradigan barqaror API yo'q.
+- 1-daraja: "jonli fotosurat" uslubidagi professional video. Hujjatli filmlar, reklama va Reels'da keng ishlatiladi.
+- 2-daraja: eng yuqori sifat, bepul. Faqat har sahna uchun klipni saytdan o'zingiz yuklab olasiz, qolganini ofis bajaradi.
+
+## O'rnatish (bir marta)
+
+```bash
+# 1. Dasturlar: Node.js 18+, ffmpeg, Python 3
+pip install edge-tts
+
+# 2. (ixtiyoriy) sozlamalar
+cd video-office && cp .env.example .env
+```
+
+Kalit kerak emas. Bepul rejim internetga ulanishni talab qiladi: Pollinations va Microsoft TTS.
 
 ## Ishlatish
 
@@ -37,50 +47,48 @@ Repozitoriy ildizida Claude Code'ni oching va yozing:
 /make-video Toshkentdagi "Tong" qahvaxonasi uchun 25 soniyalik Instagram Reels reklama, o'zbek tilida
 ```
 
-API kalitlarsiz, bepul sinab ko'rish uchun:
+Pullik rejim uchun `--paid`, oflayn test uchun `--mock` qo'shing.
 
-```
-/make-video ... --mock
-```
+### 2-daraja: bepul premium klip qo'shish
+1. Ofis storiboardni tayyorlaydi. Har bir sahnaning `visual_prompt` va `motion_prompt` i `storyboard.json` da turadi.
+2. Promptni [klingai.com](https://klingai.com), [hailuoai.video](https://hailuoai.video) yoki [vidu.com](https://www.vidu.com) saytiga kiritib, bepul kunlik kredit bilan klip yarating.
+3. Klipni `projects/<loyiha>/clips/scene-01.mp4`, `scene-02.mp4` va hokazo nomlar bilan saqlang.
+4. `/make-video` ni davom ettiring yoki `node pipeline.mjs projects/<loyiha>` ni ishga tushiring. Siz qo'ygan kliplar saqlanadi, yetishmaganlari bepul usulda yaratiladi.
 
-Producer xarajat talab qiladigan bosqichdan oldin sahnalar rejasini ko'rsatib, tasdiqingizni so'raydi.
+Sahnalarni aralashtirish ham mumkin: muhim 1–2 sahna premium, qolganlari avtomatik.
 
 ## Qo'lda ishlatish (Claude'siz)
 
 ```bash
 cd video-office
-npm run demo                                            # namuna loyiha, mock rejimda
-node pipeline.mjs projects/<loyiha>                     # to'liq ishlab chiqarish
+npm run demo                                                  # namuna loyiha, bepul rejim
+node pipeline.mjs projects/<loyiha>                           # bepul
+node pipeline.mjs projects/<loyiha> --provider paid           # Runway + ElevenLabs
 node tools/gen-clip.mjs projects/<loyiha> --scene 2 --force   # faqat 2-sahnani qayta yaratish
-node tools/assemble.mjs projects/<loyiha>               # faqat qayta montaj
+node tools/assemble.mjs projects/<loyiha>                     # faqat qayta montaj
 ```
 
 ## Loyiha tuzilishi
 
 ```
 projects/<loyiha>/
-├── brief.md          vazifa (Producer yozadi)
+├── brief.md          vazifa
 ├── script.md         ssenariy
-├── storyboard.json   sahnalar: narration, visual_prompt, motion_prompt, duration
-├── music.mp3         ixtiyoriy fon musiqasi (o'zingiz qo'yasiz, masalan Suno'dan)
-├── audio/  clips/  build/
+├── storyboard.json   sahnalar: narration, visual_prompt, motion_prompt, duration, seed
+├── music.mp3         ixtiyoriy fon musiqasi (bepul: pixabay.com/music)
+├── images/  audio/  clips/  build/
 ├── final.mp4         ✅ tayyor video
 └── qa-report.md
 ```
 
 `storyboard.json` ning to'liq sxemasi: [`.claude/agents/storyboard-artist.md`](../.claude/agents/storyboard-artist.md).
 
-## Xarajat (taxminiy)
-
-| Xizmat | Narx |
-|---|---|
-| Runway kalit kadr (`gen4_image`) | ~$0.05–0.08 / rasm |
-| Runway video (`gen4_turbo`) | ~$0.05 / soniya (5 s klip ≈ $0.25) |
-| ElevenLabs | tarifga bog'liq, 30 s ovoz ≈ 400–500 belgi |
-
-25 soniyalik, 5 sahnali video ≈ **$1.5–2**. Qayta yaratishlar alohida hisoblanadi. Narxlar o'zgarishi mumkin, xizmatlarning saytida tekshiring.
+## Sifat bo'yicha maslahatlar
+- **Rasm yoqmasa:** sahnaga boshqa `"seed"` bering va `--scene N --force` bilan qayta yarating.
+- **Ovoz:** raqamlarni so'z bilan yozing. Tezlik `.env` dagi `EDGE_RATE` bilan o'zgartiriladi.
+- **Musiqa:** Pixabay Music yoki YouTube Audio Library'dan bepul, mualliflik huquqisiz trek oling va `music.mp3` deb saqlang.
+- **Uslub:** barcha sahnalarga bir xil `style` yozing, masalan `"warm cinematic, golden hour, 35mm film"`. Shunda video yaxlit ko'rinadi.
 
 ## Cheklovlar
-- Runway klipi bir sahnada eng ko'pi bilan 10 soniya. Uzun ovozli sahnani ikkiga bo'ling.
-- ElevenLabs'ning o'zbek tilidagi talaffuzini avval sinab ko'ring. Kerak bo'lsa, boshqa `ELEVENLABS_MODEL` yoki `voice_id` tanlang.
-- Musiqa avtomatik yaratilmaydi: `music.mp3` ni loyiha papkasiga o'zingiz qo'ying.
+- Bepul xizmatlarning navbati va limiti bor. Pollinations band bo'lsa, skript o'zi kutib qayta urinadi.
+- Runway klipi bir sahnada eng ko'pi bilan 10 soniya.

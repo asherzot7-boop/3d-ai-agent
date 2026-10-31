@@ -1,9 +1,9 @@
 // Narration per scene → audio/scene-NN.mp3
-// Usage: node tools/gen-voice.mjs <project> [--provider elevenlabs|mock] [--scene N] [--force]
+// Usage: node tools/gen-voice.mjs <project> [--provider edge|elevenlabs|mock] [--scene N] [--force]
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  ffmpeg, loadEnv, loadStoryboard, log, parseArgs, projectDir, requireEnv, sceneName,
+  ffmpeg, loadEnv, loadStoryboard, log, parseArgs, projectDir, requireEnv, run, sceneName,
 } from '../lib/util.mjs';
 
 async function elevenlabs(text, dest, voiceId) {
@@ -25,6 +25,19 @@ async function elevenlabs(text, dest, voiceId) {
   fs.writeFileSync(dest, Buffer.from(await res.arrayBuffer()));
 }
 
+// Free: Microsoft Edge neural voices via the edge-tts CLI (pip install edge-tts).
+// Native Uzbek voices: uz-UZ-MadinaNeural (female), uz-UZ-SardorNeural (male).
+async function edge(text, dest, voiceId) {
+  const voice = voiceId || process.env.EDGE_VOICE || 'uz-UZ-MadinaNeural';
+  const rate = process.env.EDGE_RATE || '+0%';
+  try {
+    await run('edge-tts', ['--voice', voice, `--rate=${rate}`, '--text', text, '--write-media', dest]);
+  } catch (e) {
+    if (e.code === 'ENOENT') throw new Error('edge-tts topilmadi. O\'rnating: pip install edge-tts');
+    throw e;
+  }
+}
+
 // Offline stand-in: silence whose length approximates speaking time (~2.5 words/s).
 async function mock(text, dest) {
   const words = text.trim().split(/\s+/).filter(Boolean).length;
@@ -32,7 +45,7 @@ async function mock(text, dest) {
   await ffmpeg(['-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=mono', '-t', secs, '-q:a', '4', dest]);
 }
 
-export async function genVoice(dir, { provider = 'elevenlabs', scene, force } = {}) {
+export async function genVoice(dir, { provider = 'edge', scene, force } = {}) {
   const sb = loadStoryboard(dir);
   fs.mkdirSync(path.join(dir, 'audio'), { recursive: true });
   for (const [i, s] of sb.scenes.entries()) {
@@ -42,7 +55,8 @@ export async function genVoice(dir, { provider = 'elevenlabs', scene, force } = 
     if (fs.existsSync(dest) && !force) { log(`${sceneName(i)}: ovoz bor, o'tkazildi`); continue; }
     log(`${sceneName(i)}: ovoz yozilmoqda (${provider})`);
     if (provider === 'mock') await mock(s.narration, dest);
-    else await elevenlabs(s.narration, dest, sb.voice_id);
+    else if (provider === 'elevenlabs') await elevenlabs(s.narration, dest, sb.elevenlabs_voice_id);
+    else await edge(s.narration, dest, sb.voice_id);
   }
 }
 

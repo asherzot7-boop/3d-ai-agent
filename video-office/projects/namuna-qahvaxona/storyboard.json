@@ -2,6 +2,7 @@
   "title": "Tong qahvaxonasi — reklama",
   "aspect": "9:16",
   "language": "uz",
+  "voice_id": "uz-UZ-MadinaNeural",
   "subtitles": true,
   "music": "music.mp3",
   "music_volume": 0.15,
